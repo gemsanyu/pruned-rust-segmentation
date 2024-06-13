@@ -14,7 +14,6 @@ from torch.utils.data import DataLoader
 from setup import setup
 from train import prepare_train_and_validation_datasets, train
 
-
 def run(args):
     """main function to run the training, calling setup and preparing the train/validation epoch
 
@@ -23,8 +22,8 @@ def run(args):
     """
     model, optimizer, tb_writer, checkpoint_dir, last_epoch = setup(args)
     train_dataset, validation_dataset = prepare_train_and_validation_datasets(args)
-    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True)
-    validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size,  shuffle=True, pin_memory=True)
+    validation_dataloader = DataLoader(validation_dataset, batch_size=8, shuffle=False, pin_memory=True)
     loss = losses.JaccardLoss()
     metrics = [IoU(), Accuracy(), Precision(), Recall(), Fscore()]
     trainer = TrainEpoch(model, loss, metrics, optimizer, args.device, verbose=True)

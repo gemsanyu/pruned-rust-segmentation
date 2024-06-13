@@ -9,18 +9,19 @@ import torch
 import torch.utils
 import torch.utils.data
 from arguments import prepare_args
-from nni.compression.speedup import ModelSpeedup
 from nni.compression.pruning import AGPPruner, LinearPruner, TaylorPruner
+from nni.compression.speedup import ModelSpeedup
 from nni.compression.utils import auto_set_denpendency_group_ids
+from segmentation_models_pytorch.base.model import SegmentationModel
 from segmentation_models_pytorch.utils import losses
+from segmentation_models_pytorch.utils.meter import AverageValueMeter
 from segmentation_models_pytorch.utils.metrics import (Accuracy, Fscore, IoU,
                                                        Precision, Recall)
-from segmentation_models_pytorch.utils.meter import AverageValueMeter
 from segmentation_models_pytorch.utils.train import TrainEpoch, ValidEpoch
-from segmentation_models_pytorch.base.model import SegmentationModel
 from setup import setup_pruning
+from simplify import simplify
+from torch.nn import Conv2d, Linear, Module
 from torch.utils.data import DataLoader
-from torch.nn import Linear, Conv2d, Module
 from train import prepare_train_and_validation_datasets
 from utils import write_logs
 
@@ -115,9 +116,9 @@ def run(args):
         'sparse_ratio': args.sparsity
     }]
     total_training_steps = len(train_dataloader)*args.max_epoch
-    total_times = 10
+    total_times = 2
     training_steps = int(total_training_steps/total_times)
-    total_times = int(total_times*0.8)
+    # total_times = int(total_times*0.8)
     # 80% initial -> scheduled pruning. 20% final fine-tuning
     config_list = auto_set_denpendency_group_ids(model, config_list, sample_input)
     evaluator = nni.compression.TorchEvaluator(training, optimizer, training_step)
@@ -128,9 +129,17 @@ def run(args):
     # for key, mask in masks.items():
     #     masks[key]["weight"].to(torch.device("cpu"))
     # scheduled_pruner.unwrap_model()
+    scheduled_pruner.unwrap_model()
     model = model.to(torch.device("cpu"))
-    checkpoint_path = checkpoint_dir/(f"pruned_model-{str(args.sparsity)}.pth")
-    torch.save(model, checkpoint_path.absolute())
+    model.zero_grad()
+    sample_input = sample_input.to(torch.device("cpu"))
+    
+    ModelSpeedup(model, sample_input, masks, batch_size=1).speedup_model()
+    
+    # checkpoint_path = checkpoint_dir/(f"pruned_model-{str(args.sparsity)}.pth")
+    # mask_path = checkpoint_dir/(f"pruned_mask-{str(args.sparsity)}.pth")
+    # torch.save(model, checkpoint_path.absolute())
+    # torch.save(masks, mask_path.absolute())
     
     
 if __name__ == "__main__":

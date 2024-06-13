@@ -31,14 +31,14 @@ def get_mask(img, annotations, metadata):
     return mask
 
 def convert(mode="train"):
-    dataset_dir = pathlib.Path("")/"NEA-Dataset-coco"/mode
+    dataset_dir = pathlib.Path("")/"CIS_Coco"/mode
     annotation_file_path = dataset_dir/"_annotations.coco.json"
     dataset_name = "ndea_dataset_"+mode
     register_coco_instances(dataset_name, {}, annotation_file_path.absolute(), dataset_dir.absolute())
     ndea_metadata = MetadataCatalog.get(dataset_name)
     dataset_dicts = DatasetCatalog.get(dataset_name)
     
-    new_dataset_dir = pathlib.Path("")/"NEA-Dataset-semantic"
+    new_dataset_dir = pathlib.Path("")/"CIS"
     new_dir = new_dataset_dir/mode
     new_img_dir = new_dir/"images"
     new_mask_dir = new_dir/"masks"
@@ -58,6 +58,7 @@ def convert(mode="train"):
 
 def run():
     convert(mode="train")
+    convert(mode="valid")
     convert(mode="test")
     
 if __name__ == "__main__":

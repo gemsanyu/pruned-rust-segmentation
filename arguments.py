@@ -20,7 +20,7 @@ def prepare_args():
                         default="fpn",
                         help="choices for architecture")
     parser.add_argument('--dataset',
-                        choices=["NEA"],
+                        choices=["NEA", "CCSC", "CIS"],
                         default="NEA",
                         help="name of dataset")
     

@@ -28,8 +28,18 @@ class SegmentationDataset(Dataset):
         self.images: List[cv2.typing.MatLike] = [cv2.imread(str(img_path.absolute())) for img_path in image_paths]
         self.masks: List[cv2.typing.MatLike] = [cv2.imread(str(mask_path.absolute()), cv2.IMREAD_GRAYSCALE)[:,:,np.newaxis] for mask_path in mask_paths]
         self.images = [cv2.cvtColor(image, cv2.COLOR_BGR2RGB) for image in self.images]
-        self.images = np.stack(self.images)
-        self.masks = np.stack(self.masks)
+        shapes = np.asanyarray([image.shape for image in self.images])
+        max_shape = np.max(shapes, axis=0)
+        min_shape = np.min(shapes, axis=0)
+        if not np.all(np.equal(max_shape, min_shape)):
+            self.images = [cv2.resize(image, (512,512)) for image in self.images]
+            self.masks = [cv2.resize(mask, (512,512)) for mask in self.masks]
+            if len(self.masks[0].shape)==2:
+                self.masks = [np.reshape(mask, [512,512,1]) for mask in self.masks]
+        for i in range(len(self.masks)):
+            self.masks[i][self.masks[i]>0]=1
+        # self.images = np.stack(self.images)
+        # self.masks = np.stack(self.masks)
         
     def __len__(self):
         return len(self.images)
