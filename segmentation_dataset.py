@@ -40,6 +40,7 @@ class SegmentationDataset(Dataset):
         
     def __getitem__(self, index) -> Tuple[np.ndarray, np.ndarray]:
         image, mask = self.images[index], self.masks[index]
+        print(image.shape, mask.shape)
         if self.augmentation:
             sample = self.augmentation(image=image, mask=mask)
             image, mask = sample['image'], sample['mask']
