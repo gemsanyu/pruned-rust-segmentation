@@ -30,7 +30,6 @@ class SegmentationDataset(Dataset):
         mask_paths = [self.masks_dir/(img_id+".png") for img_id in img_ids]
         self.images: List[cv2.typing.MatLike] = [cv2.imread(str(img_path.absolute())) for img_path in image_paths]
         self.masks: List[cv2.typing.MatLike] = [cv2.imread(str(mask_path.absolute()), cv2.IMREAD_UNCHANGED)[:,:,np.newaxis] for mask_path in mask_paths]
-        self.images = [cv2.cvtColor(image, cv2.COLOR_BGR2RGB) for image in self.images]
         self.num_classes = 1
         for mask in self.masks:
             self.num_classes = max(self.num_classes, int(np.max(mask)+1))
