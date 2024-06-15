@@ -33,10 +33,7 @@ class SegmentationDataset(Dataset):
         self.num_classes = 1
         for mask in self.masks:
             self.num_classes = max(self.num_classes, int(np.max(mask)+1))
-        if self.num_classes > 1:
-            # one hot encode the mask
-            for i, mask in enumerate(self.masks):
-                self.masks[i] = to_categorical(mask, self.num_classes)
+        
             
     def __len__(self):
         return len(self.images)
@@ -49,6 +46,11 @@ class SegmentationDataset(Dataset):
         if self.preprocessing:
             sample = self.preprocessing(image=image, mask=mask)
             image, mask = sample['image'], sample['mask']
+        if self.num_classes > 1:
+            # # one hot encode the mask
+            # for i, mask in enumerate(self.masks):
+            #     self.masks[i] = to_categorical(mask, self.num_classes)
+            mask = to_categorical(mask)
         return image, mask
 
 def get_training_augmentation():
