@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 import albumentations as albu
 from torch.utils.data import Dataset
+from keras.utils import to_categorical
 
 
 class SegmentationDataset(Dataset):
@@ -21,26 +22,22 @@ class SegmentationDataset(Dataset):
         self.images_dir = self.data_dir/"images"
         self.masks_dir = self.data_dir/"masks"
         self.image_names = [filepath.name for filepath in self.images_dir.iterdir() if filepath.is_file()]
+        img_ids = [img_name.split(".")[0] for img_name in self.image_names]
         if filter_idx_list is not None:
             self.image_names = [self.image_names[idx] for idx in filter_idx_list]
         image_paths = [self.images_dir/image_name for image_name in self.image_names]
-        mask_paths = [self.masks_dir/image_name for image_name in self.image_names]
+        mask_paths = [self.masks_dir/(img_id+".png") for img_id in img_ids]
         self.images: List[cv2.typing.MatLike] = [cv2.imread(str(img_path.absolute())) for img_path in image_paths]
-        self.masks: List[cv2.typing.MatLike] = [cv2.imread(str(mask_path.absolute()), cv2.IMREAD_GRAYSCALE)[:,:,np.newaxis] for mask_path in mask_paths]
+        self.masks: List[cv2.typing.MatLike] = [cv2.imread(str(mask_path.absolute()), cv2.IMREAD_UNCHANGED)[:,:,np.newaxis] for mask_path in mask_paths]
         self.images = [cv2.cvtColor(image, cv2.COLOR_BGR2RGB) for image in self.images]
-        shapes = np.asanyarray([image.shape for image in self.images])
-        max_shape = np.max(shapes, axis=0)
-        min_shape = np.min(shapes, axis=0)
-        if not np.all(np.equal(max_shape, min_shape)):
-            self.images = [cv2.resize(image, (512,512)) for image in self.images]
-            self.masks = [cv2.resize(mask, (512,512)) for mask in self.masks]
-            if len(self.masks[0].shape)==2:
-                self.masks = [np.reshape(mask, [512,512,1]) for mask in self.masks]
-        for i in range(len(self.masks)):
-            self.masks[i][self.masks[i]>0]=1
-        # self.images = np.stack(self.images)
-        # self.masks = np.stack(self.masks)
-        
+        self.num_classes = 1
+        for mask in self.masks:
+            self.num_classes = max(self.num_classes, int(np.max(mask)+1))
+        if self.num_classes > 1:
+            # one hot encode the mask
+            for i, mask in enumerate(self.masks):
+                self.masks[i] = to_categorical(mask, self.num_classes)
+            
     def __len__(self):
         return len(self.images)
         
@@ -99,7 +96,7 @@ def get_training_augmentation():
 def get_validation_augmentation():
     """Add paddings to make image shape divisible by 32"""
     test_transform = [
-        albu.PadIfNeeded(736, 1280),
+        albu.PadIfNeeded(1280, 1280),
     ]
     return albu.Compose(test_transform)
 

@@ -1,6 +1,6 @@
 import os
 import pathlib
-import random
+import multiprocessing as mp
 
 import cv2
 import matplotlib.pyplot as plt
@@ -17,20 +17,41 @@ from PIL import Image, ImageDraw
 from torchvision import datasets, models
 import segmentation_models_pytorch as smp
 
-def get_mask(img, annotations, metadata):
-    black_img = np.zeros_like(img)
-    v = Visualizer(black_img, metadata=metadata, scale=1)
-    for a in annotations:
-        segment = np.asanyarray(a["segmentation"])
-        _, n = segment.shape
-        segment = segment.reshape([int(n/2),2])
-        v.draw_polygon(segment, "white")
-    v = v.get_output()
-    mask = v.get_image()
-    mask[mask>0] = 1
-    return mask
+def convert(image_dir: pathlib.Path,
+            mask_dir: pathlib.Path,
+            new_img_dir: pathlib.Path,
+            new_mask_dir: pathlib.Path,
+            img_filename: str,
+            unique_colors: np.ndarray,
+            unique_ids: np.ndarray):
+    img_id = img_filename.split(".")[0]
+    mask_path = mask_dir/(img_id+".png")
+    img_path = image_dir/img_filename
+    new_img_path = new_img_dir/img_filename
+    mask = cv2.imread(mask_path.absolute())
+    img =  cv2.imread(img_path.absolute())
+    x,y,z = mask.shape
+    mask = np.reshape(mask, [x*y,z])
+    is_color = np.equal(mask[:,np.newaxis,:], unique_colors[np.newaxis,:,:])
+    is_color = np.all(is_color, axis=-1)
+    new_mask = np.sum(unique_ids*is_color, axis=-1, keepdims=True)
+    new_mask = np.reshape(new_mask, [x,y,1])
+    new_mask_path = new_mask_dir/(img_id+".png")
+    cv2.imwrite(str(new_img_path.absolute()), img)
+    cv2.imwrite(str(new_mask_path.absolute()), new_mask)
+    # new_mask_ = cv2.imread(str(new_mask_path.absolute()), cv2.IMREAD_UNCHANGED)[:,:,np.newaxis]
+    # assert np.all(np.equal(new_mask, new_mask_))
 
-def convert(mode="train"):
+def get_unique_colors(ref_mask_name:str, mask_dir: pathlib.Path):
+    ref_mask_path = mask_dir/ref_mask_name
+    ref_mask = cv2.imread(ref_mask_path.absolute())
+    x,y,z = ref_mask.shape
+    ref_mask = np.reshape(ref_mask, [x*y,z])
+    unique_colors = np.unique(ref_mask, axis=0)
+    return unique_colors
+
+
+def run(mode, ref_mask_name):
     dataset_dir = pathlib.Path("")/"CCSC_original"/mode
     image_dir = dataset_dir/"images"
     image_filenames = os.listdir(image_dir.absolute())
@@ -43,31 +64,18 @@ def convert(mode="train"):
     new_img_dir.mkdir(parents=True, exist_ok=True)
     new_mask_dir.mkdir(parents=True, exist_ok=True)
     
-    
-    for img_filename in image_filenames:
-        img_id = img_filename.split(".")[0]
-        mask_path = mask_dir/(img_id+".png")
-        img_path = image_dir/img_filename
-        new_img_path = new_img_dir/img_filename
-        mask = cv2.imread(mask_path.absolute())
-        img =  cv2.imread(img_path.absolute())
-        x,y,z = mask.shape
-        mask = np.reshape(mask, [x*y,z])
-        unique_colors = np.unique(mask, axis=0)
-        unique_ids = np.arange(len(unique_colors))
-        unique_ids = np.tile(unique_ids, [x*y,1])
-        is_color = np.equal(mask[:,np.newaxis,:], unique_colors[np.newaxis,:,:])
-        is_color = np.all(is_color, axis=-1)
-        new_mask = np.sum(unique_ids*is_color, axis=-1, keepdims=True)
-        new_mask = np.reshape(new_mask, [x,y,1])
-        new_mask_path = new_mask_dir/(img_filename)
-        cv2.imwrite(str(new_img_path.absolute()), img)
-        cv2.imwrite(str(new_mask_path.absolute()), new_mask)
+    unique_colors = get_unique_colors(ref_mask_name, mask_dir)
+    unique_ids = np.arange(len(unique_colors))
 
-def run():
-    convert(mode="train")
-    # convert(mode="valid")
-    convert(mode="test")
+    args = [(image_dir, mask_dir, new_img_dir, new_mask_dir, img_filename, unique_colors, unique_ids) for img_filename in image_filenames]
+
+    # with mp.Pool(4) as pool:
+    #     pool.starmap(convert, args)
+    for arg in args:
+        convert(*arg)    
+    
     
 if __name__ == "__main__":
-    run()
+    run("train", "355.png")
+    # convert(mode="valid")
+    run("test", "14.png")

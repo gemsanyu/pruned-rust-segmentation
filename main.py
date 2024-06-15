@@ -6,6 +6,7 @@ import torch
 import torch.utils
 import torch.utils.data
 from arguments import prepare_args
+from sklearn.preprocessing import Binarizer
 from segmentation_models_pytorch.utils import losses
 from segmentation_models_pytorch.utils.metrics import Accuracy, Fscore, IoU, Precision, Recall
 from segmentation_models_pytorch.utils.train import TrainEpoch, ValidEpoch
@@ -24,8 +25,8 @@ def run(args):
     train_dataset, validation_dataset = prepare_train_and_validation_datasets(args)
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size,  shuffle=True, pin_memory=True)
     validation_dataloader = DataLoader(validation_dataset, batch_size=8, shuffle=False, pin_memory=True)
-    loss = losses.JaccardLoss()
-    metrics = [IoU(), Accuracy(), Precision(), Recall(), Fscore()]
+    loss = losses.DiceLoss() + losses.CrossEntropyLoss() + losses.JaccardLoss()
+    metrics = [IoU(), Fscore(), Accuracy(), Precision(), Recall()]
     trainer = TrainEpoch(model, loss, metrics, optimizer, args.device, verbose=True)
     validator = ValidEpoch(model, loss, metrics, device=args.device, verbose=True)
     train(trainer, train_dataloader, validator, validation_dataloader, tb_writer, checkpoint_dir, last_epoch, args.max_epoch)
