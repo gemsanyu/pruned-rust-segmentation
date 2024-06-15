@@ -22,9 +22,10 @@ class SegmentationDataset(Dataset):
         self.images_dir = self.data_dir/"images"
         self.masks_dir = self.data_dir/"masks"
         self.image_names = [filepath.name for filepath in self.images_dir.iterdir() if filepath.is_file()]
-        img_ids = [img_name.split(".")[0] for img_name in self.image_names]
+        
         if filter_idx_list is not None:
             self.image_names = [self.image_names[idx] for idx in filter_idx_list]
+        img_ids = [img_name.split(".")[0] for img_name in self.image_names]
         image_paths = [self.images_dir/image_name for image_name in self.image_names]
         mask_paths = [self.masks_dir/(img_id+".png") for img_id in img_ids]
         self.images: List[cv2.typing.MatLike] = [cv2.imread(str(img_path.absolute())) for img_path in image_paths]
