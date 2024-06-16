@@ -1,5 +1,6 @@
+import os
 import pathlib
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 
 import numpy as np
 import cv2
@@ -7,11 +8,30 @@ import albumentations as albu
 from torch.utils.data import Dataset
 from keras.utils import to_categorical
 
+IMG_EXTENSIONS = [".jpg",".jpeg",".png"]
+MASK_EXTENSIONS = [".tif", ".png"]
+
+
+def read_img(img_dir: pathlib.Path, 
+             img_id: str, 
+             extensions: List[str],
+             imread_flag: int = None):
+    for ext in extensions:
+        img_path = img_dir/(img_id+ext)
+        if not os.path.exists(img_path.absolute()):
+            continue
+        if imread_flag:
+            img = cv2.imread(str(img_path.absolute()), imread_flag)
+        else:
+            img = cv2.imread(str(img_path.absolute()))
+    return img
+    
 
 class SegmentationDataset(Dataset):
     def __init__(self, 
                  name:str="NEA-Dataset-semantic",
                  mode:str="train",
+                 num_images:int=None,
                  augmentation:albu.Compose=None,
                  preprocessing:albu.Compose=None,
                  filter_idx_list:List[int]=None):
@@ -22,35 +42,40 @@ class SegmentationDataset(Dataset):
         self.images_dir = self.data_dir/"images"
         self.masks_dir = self.data_dir/"masks"
         self.image_names = [filepath.name for filepath in self.images_dir.iterdir() if filepath.is_file()]
-        
         if filter_idx_list is not None:
             self.image_names = [self.image_names[idx] for idx in filter_idx_list]
-        img_ids = [img_name.split(".")[0] for img_name in self.image_names]
-        image_paths = [self.images_dir/image_name for image_name in self.image_names]
-        mask_paths = [self.masks_dir/(img_id+".png") for img_id in img_ids]
-        self.images: List[cv2.typing.MatLike] = [cv2.imread(str(img_path.absolute())) for img_path in image_paths]
-        self.masks: List[cv2.typing.MatLike] = [cv2.imread(str(mask_path.absolute()), cv2.IMREAD_UNCHANGED)[:,:,np.newaxis] for mask_path in mask_paths]
+        self.img_ids = [img_name.split(".")[0] for img_name in self.image_names]
+        self.num_images = num_images or len(self.img_ids)
+        self.img_dict: Dict[str, np.ndarray] = {}
+        self.mask_dict: Dict[str, np.ndarray] = {}
         self.num_classes = 1
-        for mask in self.masks:
-            self.num_classes = max(self.num_classes, int(np.max(mask)+1))
         
+        for img_id in self.img_ids:
+            img = read_img(self.images_dir, img_id, IMG_EXTENSIONS)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            self.img_dict[img_id] = img
+            mask = read_img(self.masks_dir, img_id, MASK_EXTENSIONS, cv2.IMREAD_UNCHANGED)
+            self.num_classes = max(self.num_classes, int(np.max(mask)+1))
+            self.mask_dict[img_id] = mask[:,:,np.newaxis]
             
     def __len__(self):
-        return len(self.images)
+        return self.num_images
+        # return len(self.img_ids)
         
     def __getitem__(self, index) -> Tuple[np.ndarray, np.ndarray]:
-        image, mask = self.images[index], self.masks[index]
+        # so that we can set number of dataset size as much as we want?
+        index = index % len(self.img_ids) 
+        img_id = self.img_ids[index]
+        image, mask = self.img_dict[img_id], self.mask_dict[img_id]
+        if self.num_classes > 1:
+            # # one hot encode the mask
+            mask = to_categorical(mask, self.num_classes)
         if self.augmentation:
             sample = self.augmentation(image=image, mask=mask)
             image, mask = sample['image'], sample['mask']
         if self.preprocessing:
             sample = self.preprocessing(image=image, mask=mask)
             image, mask = sample['image'], sample['mask']
-        if self.num_classes > 1:
-            # # one hot encode the mask
-            # for i, mask in enumerate(self.masks):
-            #     self.masks[i] = to_categorical(mask, self.num_classes)
-            mask = to_categorical(mask)
         return image, mask
 
 def get_training_augmentation():

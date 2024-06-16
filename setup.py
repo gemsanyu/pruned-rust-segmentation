@@ -20,6 +20,12 @@ ARCH_CLASS_DICT = {
     "deeplabv3":smp.DeepLabV3,
     "deeplabv3+":smp.DeepLabV3Plus}
 
+NUM_CLASSES_DICT = {
+    "NEA": 3,
+    "CIS": 1,
+    "CCSC": 4,
+}
+
 
 
 def prepare_tb_writer(args)->SummaryWriter:
@@ -33,10 +39,11 @@ def prepare_tb_writer(args)->SummaryWriter:
 
 def setup_model(args)->SegmentationModel:
     Arch_Class = ARCH_CLASS_DICT[args.arch]
+    num_classes = NUM_CLASSES_DICT[args.dataset]
     model = Arch_Class(
         encoder_name=args.encoder,
         encoder_weights=args.encoder_pretrained_source,
-        classes=1,
+        classes=num_classes,
         activation="sigmoid"
     )
     return model

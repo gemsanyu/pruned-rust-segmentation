@@ -30,7 +30,10 @@ def convert(image_dir: pathlib.Path,
     new_img_path = new_img_dir/img_filename
     mask = cv2.imread(mask_path.absolute())
     img =  cv2.imread(img_path.absolute())
-    x,y,z = mask.shape
+    x,y,z = img.shape
+    mx,my,mz = mask.shape
+    if mx!=x or my!=y:
+        return 
     mask = np.reshape(mask, [x*y,z])
     is_color = np.equal(mask[:,np.newaxis,:], unique_colors[np.newaxis,:,:])
     is_color = np.all(is_color, axis=-1)
@@ -39,8 +42,6 @@ def convert(image_dir: pathlib.Path,
     new_mask_path = new_mask_dir/(img_id+".png")
     cv2.imwrite(str(new_img_path.absolute()), img)
     cv2.imwrite(str(new_mask_path.absolute()), new_mask)
-    # new_mask_ = cv2.imread(str(new_mask_path.absolute()), cv2.IMREAD_UNCHANGED)[:,:,np.newaxis]
-    # assert np.all(np.equal(new_mask, new_mask_))
 
 def get_unique_colors(ref_mask_name:str, mask_dir: pathlib.Path):
     ref_mask_path = mask_dir/ref_mask_name
@@ -69,10 +70,10 @@ def run(mode, ref_mask_name):
 
     args = [(image_dir, mask_dir, new_img_dir, new_mask_dir, img_filename, unique_colors, unique_ids) for img_filename in image_filenames]
 
-    # with mp.Pool(4) as pool:
-    #     pool.starmap(convert, args)
-    for arg in args:
-        convert(*arg)    
+    with mp.Pool(4) as pool:
+        pool.starmap(convert, args)
+    # for arg in args:
+    #     convert(*arg)
     
     
 if __name__ == "__main__":

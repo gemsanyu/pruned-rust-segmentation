@@ -51,19 +51,19 @@ def train(trainer: TrainEpoch,
 
 
       
-def prepare_train_and_validation_datasets(args, n_splits=5)->Tuple[SegmentationDataset,SegmentationDataset]:
+def prepare_train_and_validation_datasets(args, num_images=None, n_splits=5)->Tuple[SegmentationDataset,SegmentationDataset]:
     preprocessing_fn = smp.encoders.get_preprocessing_fn(args.encoder,args.encoder_pretrained_source)
     preprocessing = get_preprocessing(preprocessing_fn)
     augmentation = get_training_augmentation()
     validation_augmentation = get_validation_augmentation()
     try:
         validation_dataset = SegmentationDataset(name=args.dataset, mode="valid", augmentation=validation_augmentation, preprocessing=preprocessing)
-        train_dataset = SegmentationDataset(name=args.dataset, mode="train", augmentation=augmentation, preprocessing=preprocessing)
+        train_dataset = SegmentationDataset(name=args.dataset, mode="train", num_images=num_images, augmentation=augmentation, preprocessing=preprocessing)
     except FileNotFoundError:
         full_train_dataset = SegmentationDataset(name=args.dataset, mode="train")
         kfold = KFold(n_splits=n_splits, shuffle=True)
         for fold, (train_ids, val_ids) in enumerate(kfold.split(full_train_dataset)):
-            train_dataset = SegmentationDataset(name=args.dataset, mode="train", augmentation=augmentation, preprocessing=preprocessing, filter_idx_list=train_ids)
+            train_dataset = SegmentationDataset(name=args.dataset, mode="train", num_images=num_images, augmentation=augmentation, preprocessing=preprocessing, filter_idx_list=train_ids)
             validation_dataset = SegmentationDataset(name=args.dataset, mode="train", augmentation=validation_augmentation, preprocessing=preprocessing, filter_idx_list=val_ids)
     return train_dataset, validation_dataset
     

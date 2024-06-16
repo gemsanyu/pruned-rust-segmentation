@@ -24,8 +24,8 @@ def run(args):
     model, optimizer, tb_writer, checkpoint_dir, last_epoch = setup(args)
     train_dataset, validation_dataset = prepare_train_and_validation_datasets(args)
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size,  shuffle=True, pin_memory=True)
-    validation_dataloader = DataLoader(validation_dataset, batch_size=8, shuffle=False, pin_memory=True)
-    loss = losses.DiceLoss() + losses.CrossEntropyLoss() + losses.JaccardLoss()
+    validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
+    loss = losses.DiceLoss() + losses.CrossEntropyLoss()
     metrics = [IoU(), Fscore(), Accuracy(), Precision(), Recall()]
     trainer = TrainEpoch(model, loss, metrics, optimizer, args.device, verbose=True)
     validator = ValidEpoch(model, loss, metrics, device=args.device, verbose=True)
