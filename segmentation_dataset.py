@@ -54,10 +54,11 @@ class SegmentationDataset(Dataset):
         for img_id in self.img_ids:
             img = read_img(self.images_dir, img_id, IMG_EXTENSIONS)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            self.img_dict[img_id] = img
             mask = read_img(self.masks_dir, img_id, MASK_EXTENSIONS, cv2.IMREAD_UNCHANGED)
             self.num_classes = max(self.num_classes, int(np.max(mask)+1))
+            img, mask = pad_to_closest_32mult(img, mask)
             self.mask_dict[img_id] = mask[:,:,np.newaxis]
+            self.img_dict[img_id] = img
             
     def __len__(self):
         return self.num_images
@@ -81,7 +82,8 @@ class SegmentationDataset(Dataset):
         return image, mask
     
 def pad_to_closest_32mult(image:np.ndarray, mask:np.ndarray):
-    c,h,w = image.shape
+    s = image.shape
+    h,w = s[0], s[1]
     if h%32 != 0 or w%32!=0:
         target_h = int(math.ceil(h/32))*32
         target_w = int(math.ceil(w/32))*32
@@ -94,7 +96,8 @@ def pad_to_closest_32mult(image:np.ndarray, mask:np.ndarray):
         image = cv2.copyMakeBorder(image, top, bot, left, right, borderType=cv2.BORDER_CONSTANT)
         mask = cv2.copyMakeBorder(mask, top, bot, left, right, borderType=cv2.BORDER_CONSTANT)
     return image, mask
-
+    
+    
 def get_training_augmentation():
     train_transform = [
 
