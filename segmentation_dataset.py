@@ -1,12 +1,13 @@
+import math
 import os
 import pathlib
-from typing import Tuple, List, Dict
+from typing import Dict, List, Tuple
 
-import numpy as np
-import cv2
 import albumentations as albu
-from torch.utils.data import Dataset
+import cv2
+import numpy as np
 from keras.utils import to_categorical
+from torch.utils.data import Dataset
 
 IMG_EXTENSIONS = [".jpg",".jpeg",".png"]
 MASK_EXTENSIONS = [".tif", ".png"]
@@ -76,7 +77,23 @@ class SegmentationDataset(Dataset):
         if self.preprocessing:
             sample = self.preprocessing(image=image, mask=mask)
             image, mask = sample['image'], sample['mask']
+        image, mask = pad_to_closest_32mult(image, mask)
         return image, mask
+    
+def pad_to_closest_32mult(image:np.ndarray, mask:np.ndarray):
+    c,h,w = image.shape
+    if h%32 != 0 or w%32!=0:
+        target_h = int(math.ceil(h/32))*32
+        target_w = int(math.ceil(w/32))*32
+        diff_h = target_h-h
+        diff_w = target_w-w
+        top = int(diff_h/2)
+        bot = diff_h-top
+        left = int(diff_w/2)
+        right = diff_w-left
+        image = cv2.copyMakeBorder(image, top, bot, left, right, borderType=cv2.BORDER_CONSTANT)
+        mask = cv2.copyMakeBorder(mask, top, bot, left, right, borderType=cv2.BORDER_CONSTANT)
+    return image, mask
 
 def get_training_augmentation():
     train_transform = [
