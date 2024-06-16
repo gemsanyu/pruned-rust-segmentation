@@ -78,7 +78,6 @@ class SegmentationDataset(Dataset):
         if self.preprocessing:
             sample = self.preprocessing(image=image, mask=mask)
             image, mask = sample['image'], sample['mask']
-        image, mask = pad_to_closest_32mult(image, mask)
         return image, mask
     
 def pad_to_closest_32mult(image:np.ndarray, mask:np.ndarray):
