@@ -106,7 +106,7 @@ def validate(model,
         losses += [loss.cpu().item()]
         pred_ = torch.argmax(prediction.detach(), dim=1, keepdim=True).detach().cpu()
         
-        tp, fp, fn, tn = smp.metrics.get_stats(pred_, y, mode=mode, num_classes=num_class)
+        tp, fp, fn, tn = smp.metrics.get_stats(pred_, y.cpu(), mode=mode, num_classes=num_class)
         iou = iou_score(tp, fp, fn, tn, reduction="micro-imagewise")
         f1 = f1_score(tp, fp, fn, tn, reduction="micro-imagewise")
         
