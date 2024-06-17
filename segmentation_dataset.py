@@ -67,9 +67,9 @@ class SegmentationDataset(Dataset):
         index = index % len(self.image_names) 
         img_name = self.image_names[index]
         image, mask = self.img_dict[img_name], self.mask_dict[img_name]
-        if self.num_classes > 1:
-            # # one hot encode the mask
-            mask = to_categorical(mask, self.num_classes)
+        # if self.num_classes > 1:
+        #     # # one hot encode the mask
+        #     mask = to_categorical(mask, self.num_classes)
         if self.augmentation:
             sample = self.augmentation(image=image, mask=mask)
             image, mask = sample['image'], sample['mask']
@@ -126,13 +126,13 @@ def get_training_augmentation():
         #     p=0.9,
         # ),
 
-        # albu.OneOf(
-        #     [
-        #         albu.RandomBrightnessContrast(p=1),
-        #         albu.HueSaturationValue(p=1),
-        #     ],
-        #     p=0.9,
-        # ),
+        albu.OneOf(
+            [
+                albu.RandomBrightnessContrast(p=1),
+                albu.HueSaturationValue(p=1),
+            ],
+            p=0.9,
+        ),
     ]
     return albu.Compose(train_transform)
 

@@ -58,8 +58,7 @@ def save(model:SegmentationModel,
     if os.path.exists(best_result_path.absolute()):
         best_result = torch.load(best_result_path.absolute())
         best_iou_score = best_result["iou_score"]
-        best_accuracy = best_result["accuracy"]
-    if (best_result is None) or (best_iou_score < result["iou_score"]) or (best_iou_score==result["iou_score"] and best_accuracy<result["accuracy"]):
+    if (best_result is None) or (best_iou_score < result["iou_score"]):
         torch.save(checkpoint, best_checkpoint_path.absolute())
         torch.save(result, best_result_path.absolute())
     
