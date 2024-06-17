@@ -8,17 +8,13 @@ import segmentation_models_pytorch as smp
 import torch
 import torch.utils
 import torch.utils.data
-from arguments import prepare_args
 from segmentation_dataset import (SegmentationDataset, get_preprocessing,
                                   get_training_augmentation,
                                   get_validation_augmentation)
+from segmentation_models_pytorch.metrics import f1_score, iou_score
 from segmentation_models_pytorch.utils.base import Loss
-from segmentation_models_pytorch.metrics import iou_score, f1_score
-from setup import setup
 from sklearn.model_selection import KFold
-from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
-from utils import save, write_logs
+from tqdm import tqdm
 
 
 def train(model, 
@@ -42,7 +38,8 @@ def train(model,
     losses = []
     ious = []
     f1s = []
-    for _, batch in enumerate(dataloader):
+    progress_bar = tqdm(enumerate(dataloader), desc="Training", leave=False)
+    for _, batch in progress_bar:
         x, y = batch
         y = y.long()
         optimizer.zero_grad()
@@ -59,6 +56,11 @@ def train(model,
         f1 = f1_score(tp, fp, fn, tn, reduction="micro-imagewise")
         ious += [iou.item()]
         f1s += [f1.item()]
+        current_iou_mean = np.asanyarray(ious).mean()
+        current_f1_mean = np.asanyarray(f1s).mean()
+        current_loss_mean = np.asanyarray(losses).mean()
+        progress_bar.set_description(f"Training, loss={current_loss_mean}, iou_score={current_iou_mean}, f1_score={current_f1_mean}")
+       
     logs = {
         "loss": np.asanyarray(losses).mean(),
         "iou_score": np.asanyarray(ious).mean(),
@@ -88,7 +90,8 @@ def validate(model,
     losses = []
     ious = []
     f1s = []
-    for _, batch in enumerate(dataloader):
+    progress_bar = tqdm(enumerate(dataloader), desc="Validation", leave=False)
+    for _, batch in progress_bar:
         x, y = batch
         y = y.long()
         prediction = model.forward(x)
@@ -100,8 +103,14 @@ def validate(model,
         tp, fp, fn, tn = smp.metrics.get_stats(pred_, y, mode=mode, num_classes=num_class)
         iou = iou_score(tp, fp, fn, tn, reduction="micro-imagewise")
         f1 = f1_score(tp, fp, fn, tn, reduction="micro-imagewise")
+        
         ious += [iou.item()]
         f1s += [f1.item()]
+        current_iou_mean = np.asanyarray(ious).mean()
+        current_f1_mean = np.asanyarray(f1s).mean()
+        current_loss_mean = np.asanyarray(losses).mean()
+        progress_bar.set_description(f"Validation, loss={current_loss_mean}, iou_score={current_iou_mean}, f1_score={current_f1_mean}")
+        
     logs = {
         "loss": np.asanyarray(losses).mean(),
         "iou_score": np.asanyarray(ious).mean(),

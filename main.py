@@ -7,11 +7,13 @@ import torch.utils
 import torch.utils.data
 from arguments import prepare_args
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from custom_loss import CustomLoss
 from setup import setup, NUM_CLASSES_DICT
 from train import prepare_train_and_validation_datasets, train, validate
 from utils import write_logs, save
+
 
 
 def run(args):
@@ -27,7 +29,7 @@ def run(args):
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=0, shuffle=True, pin_memory=True)
     validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
     loss_func = CustomLoss(num_class)
-    for epoch in range(last_epoch+1, args.max_epoch):
+    for epoch in tqdm(range(last_epoch+1, args.max_epoch)):
         train_logs = train(model, optimizer, loss_func, train_dataloader, mode)
         validation_logs = validate(model, loss_func, validation_dataloader, mode)
         write_logs(train_logs, validation_logs, tb_writer, epoch)
