@@ -50,6 +50,7 @@ def setup_model(args)->SegmentationModel:
 
 def setup(args, load_best:bool=False)->Tuple[SegmentationModel, Optimizer, SummaryWriter, pathlib.Path, int]:
     model = setup_model(args)
+    model = model.to(torch.device(args.device))
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     tb_writer = prepare_tb_writer(args)
     
