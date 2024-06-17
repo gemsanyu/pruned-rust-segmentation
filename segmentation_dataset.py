@@ -14,11 +14,11 @@ MASK_EXTENSIONS = [".tif", ".png"]
 
 
 def read_img(img_dir: pathlib.Path, 
-             img_id: str, 
+             img_name: str, 
              extensions: List[str],
              imread_flag: int = None):
     for ext in extensions:
-        img_path = img_dir/(img_id+ext)
+        img_path = img_dir/(img_name+ext)
         if not os.path.exists(img_path.absolute()):
             continue
         if imread_flag:
@@ -42,33 +42,31 @@ class SegmentationDataset(Dataset):
         self.data_dir = pathlib.Path("")/"datasets"/name/mode
         self.images_dir = self.data_dir/"images"
         self.masks_dir = self.data_dir/"masks"
-        self.image_names = [filepath.name for filepath in self.images_dir.iterdir() if filepath.is_file()]
+        self.image_names = [filepath.stem for filepath in self.images_dir.iterdir() if filepath.is_file()]
         if filter_idx_list is not None:
             self.image_names = [self.image_names[idx] for idx in filter_idx_list]
-        self.img_ids = [img_name.split(".")[0] for img_name in self.image_names]
-        self.num_images = num_images or len(self.img_ids)
+        self.num_images = num_images or len(self.image_names)
         self.img_dict: Dict[str, np.ndarray] = {}
         self.mask_dict: Dict[str, np.ndarray] = {}
         self.num_classes = 1
         
-        for img_id in self.img_ids:
-            img = read_img(self.images_dir, img_id, IMG_EXTENSIONS)
+        for img_name in self.image_names:
+            img = read_img(self.images_dir, img_name, IMG_EXTENSIONS)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            mask = read_img(self.masks_dir, img_id, MASK_EXTENSIONS, cv2.IMREAD_UNCHANGED)
+            mask = read_img(self.masks_dir, img_name, MASK_EXTENSIONS, cv2.IMREAD_UNCHANGED)
             self.num_classes = max(self.num_classes, int(np.max(mask)+1))
             img, mask = pad_to_closest_32mult(img, mask)
-            self.mask_dict[img_id] = mask[:,:,np.newaxis]
-            self.img_dict[img_id] = img
+            self.mask_dict[img_name] = mask[:,:,np.newaxis]
+            self.img_dict[img_name] = img
             
     def __len__(self):
         return self.num_images
-        # return len(self.img_ids)
         
     def __getitem__(self, index) -> Tuple[np.ndarray, np.ndarray]:
         # so that we can set number of dataset size as much as we want?
-        index = index % len(self.img_ids) 
-        img_id = self.img_ids[index]
-        image, mask = self.img_dict[img_id], self.mask_dict[img_id]
+        index = index % len(self.image_names) 
+        img_name = self.image_names[index]
+        image, mask = self.img_dict[img_name], self.mask_dict[img_name]
         if self.num_classes > 1:
             # # one hot encode the mask
             mask = to_categorical(mask, self.num_classes)

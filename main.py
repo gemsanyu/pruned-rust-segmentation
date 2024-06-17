@@ -19,15 +19,14 @@ from train import prepare_train_and_validation_datasets, train
 class CustomLoss(base.Loss):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.bce_loss = losses.BCELoss()
-        self.jaccard_loss = losses.JaccardLoss()
-        self.dice_loss = losses.DiceLoss()
+        self.loss_funcs = [losses.BCELoss(), losses.DiceLoss()]
+        self._name = "".join([loss_func._name+" + " for loss_func in self.loss_funcs])
         
     def forward(self, y_pr, y_gt):
-        return self.bce_loss.forward(y_pr, y_gt) +\
-            self.jaccard_loss.forward(y_pr, y_gt) +\
-            self.dice_loss.forward(y_pr, y_gt)    
-    
+        loss = 0
+        for loss_func in self.loss_funcs:
+            loss += loss_func.forward(y_pr, y_gt)
+        return loss
     
 
 def run(args):
@@ -38,8 +37,8 @@ def run(args):
     """
     model, optimizer, tb_writer, checkpoint_dir, last_epoch = setup(args)
     train_dataset, validation_dataset = prepare_train_and_validation_datasets(args)
-    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True)
-    validation_dataloader = DataLoader(validation_dataset, batch_size=8, shuffle=False, pin_memory=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=0, shuffle=True, pin_memory=True)
+    validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
     loss = CustomLoss()
     metrics = [IoU(), Fscore(), Accuracy(), Precision(), Recall()]
     trainer = TrainEpoch(model, loss, metrics, optimizer, args.device, verbose=True)
