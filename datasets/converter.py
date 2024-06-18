@@ -32,7 +32,7 @@ def get_mask(img, annotations, metadata):
         mask[label_mask] = int(a["category_id"])
     return mask
 
-def convert(dataset_dict, new_img_dir, new_mask_dir, metadata):
+def convert(dataset_dict, new_img_dir, new_mask_dir, metadata, mode):
     img = cv2.imread(dataset_dict["file_name"])
     original_path = pathlib.Path(dataset_dict["file_name"])
     file_name = original_path.stem
@@ -59,11 +59,11 @@ def run(mode, orig_name, new_name):
     new_img_dir.mkdir(parents=True, exist_ok=True)
     new_mask_dir.mkdir(parents=True, exist_ok=True)
     
-    args = [(dataset_dict, new_img_dir, new_mask_dir, metadata) for dataset_dict in dataset_dicts]
-    with mp.Pool(4) as pool:
-        pool.starmap(convert, args)
-    # for dataset_dict in dataset_dicts:
-        # convert(dataset_dict, new_img_dir, new_mask_dir, metadata)
+    args = [(dataset_dict, new_img_dir, new_mask_dir, metadata, mode) for dataset_dict in dataset_dicts]
+    # with mp.Pool(4) as pool:
+    #     pool.starmap(convert, args)
+    for dataset_dict in dataset_dicts:
+        convert(dataset_dict, new_img_dir, new_mask_dir, metadata)
     
 if __name__ == "__main__":
     orig_name = "NEA_original"

@@ -23,7 +23,8 @@ def convert(image_dir: pathlib.Path,
             new_mask_dir: pathlib.Path,
             img_filename: str,
             unique_colors: np.ndarray,
-            unique_ids: np.ndarray):
+            unique_ids: np.ndarray,
+            mode: str):
     img_id = img_filename.split(".")[0]
     mask_path = mask_dir/(img_id+".png")
     img_path = image_dir/img_filename
@@ -40,6 +41,9 @@ def convert(image_dir: pathlib.Path,
     new_mask = np.sum(unique_ids*is_color, axis=-1, keepdims=True)
     new_mask = np.reshape(new_mask, [x,y,1])
     new_mask_path = new_mask_dir/(img_id+".png")
+    if mode=="train":
+        img = cv2.resize(img, [512,512], interpolation=cv2.INTER_NEAREST_EXACT)
+        new_mask = cv2.resize(new_mask, [512,512], interpolation=cv2.INTER_NEAREST_EXACT)
     cv2.imwrite(str(new_img_path.absolute()), img)
     cv2.imwrite(str(new_mask_path.absolute()), new_mask)
 
@@ -68,15 +72,15 @@ def run(mode, ref_mask_name):
     unique_colors = get_unique_colors(ref_mask_name, mask_dir)
     unique_ids = np.arange(len(unique_colors))
 
-    args = [(image_dir, mask_dir, new_img_dir, new_mask_dir, img_filename, unique_colors, unique_ids) for img_filename in image_filenames]
+    args = [(image_dir, mask_dir, new_img_dir, new_mask_dir, img_filename, unique_colors, unique_ids, mode) for img_filename in image_filenames]
 
-    with mp.Pool(4) as pool:
-        pool.starmap(convert, args)
-    # for arg in args:
-    #     convert(*arg)
+    # with mp.Pool(4) as pool:
+    #     pool.starmap(convert, args)
+    for arg in args:
+        convert(*arg)
     
     
 if __name__ == "__main__":
     run("train", "355.png")
-    # convert(mode="valid")
+    # new_mask(mode="valid")
     run("test", "14.png")
