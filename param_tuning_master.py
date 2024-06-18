@@ -15,13 +15,9 @@ def start_param_tuning(args):
     experiment.config.trial_command = command
     trial_code_dir = pathlib.Path(".")/"trial_results"/args.title
     trial_code_dir.mkdir(parents=True, exist_ok=True)
-    experiment.config.trial_code_directory = trial_code_dir.absolute()
-    experiment.config.tuner.name = 'Evolution'
-    # experiment.config.tuner.class_args['optimize_mode'] = 'maximize'
-    experiment.config.tuner.class_args = {
-        'optimize_mode': 'maximize',
-        'population_size': 100
-    }
+    experiment.config.trial_code_directory = "."
+    experiment.config.tuner.name = 'TPE'
+    experiment.config.tuner.class_args['optimize_mode'] = 'maximize'
     experiment.config.max_trial_number = 100
     experiment.config.trial_concurrency = 2
     search_space = {
@@ -30,7 +26,7 @@ def start_param_tuning(args):
         "optimizer_name": {"_type":"choice", "_value":["adamw","sgd","rmsprop"]}
     }
     experiment.config.search_space = search_space
-    experiment.run(8009)
+    experiment.run(8080)
     
 if __name__ == "__main__":
     args = prepare_args()
