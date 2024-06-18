@@ -126,13 +126,13 @@ def get_training_augmentation():
         #     p=0.9,
         # ),
 
-        albu.OneOf(
-            [
-                albu.RandomBrightnessContrast(p=1),
-                albu.HueSaturationValue(p=1),
-            ],
-            p=0.9,
-        ),
+        # albu.OneOf(
+        #     [
+        #         albu.RandomBrightnessContrast(p=1),
+        #         albu.HueSaturationValue(p=1),
+        #     ],
+        #     p=0.9,
+        # ),
     ]
     return albu.Compose(train_transform)
 

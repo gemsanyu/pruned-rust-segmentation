@@ -60,14 +60,14 @@ def run(mode, orig_name, new_name):
     new_mask_dir.mkdir(parents=True, exist_ok=True)
     
     args = [(dataset_dict, new_img_dir, new_mask_dir, metadata, mode) for dataset_dict in dataset_dicts]
-    # with mp.Pool(4) as pool:
-    #     pool.starmap(convert, args)
-    for dataset_dict in dataset_dicts:
-        convert(dataset_dict, new_img_dir, new_mask_dir, metadata)
+    with mp.Pool(4) as pool:
+        pool.starmap(convert, args)
+    # for dataset_dict in dataset_dicts:
+    #     convert(dataset_dict, new_img_dir, new_mask_dir, metadata)
     
 if __name__ == "__main__":
-    orig_name = "NEA_original"
-    new_name = "NEA"
+    orig_name = "CIS_Coco"
+    new_name = "CIS"
     run("train", orig_name, new_name)
     run("valid", orig_name, new_name)
     run("test", orig_name, new_name)

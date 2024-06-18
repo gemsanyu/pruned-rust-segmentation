@@ -1,50 +1,35 @@
-import pathlib
 import random
-import ssl
 from typing import Tuple
 
 import nni
 import numpy as np
-import segmentation_models_pytorch as smp
 import torch
 import torch.utils
 import torch.utils.data
 from arguments import prepare_args
-from torch.optim import AdamW
-from segmentation_dataset import (SegmentationDataset, get_preprocessing,
-                                  get_training_augmentation,
-                                  get_validation_augmentation)
-from segmentation_models_pytorch.utils import losses
-from segmentation_models_pytorch.utils.metrics import (Accuracy, Fscore, IoU,
-                                                       Precision, Recall)
-from segmentation_models_pytorch.utils.train import TrainEpoch, ValidEpoch
-from setup import setup
-from sklearn.model_selection import KFold
 from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
-from train import prepare_train_and_validation_datasets
-from utils import save, write_logs
-from setup import setup_model
+from train import prepare_train_and_validation_datasets, train, validate
+from setup import setup_model, setup_optimizer, NUM_CLASSES_DICT
+from custom_loss import CustomLoss
+from tqdm import tqdm
 
 
 def run(args, params):
     model = setup_model(args)
-    optimizer = AdamW(model.parameters(), lr=params["lr"])
+    optimizer = setup_optimizer(model, params["optimizer_name"], params["lr"])
     train_dataset, validation_dataset = prepare_train_and_validation_datasets(args)
-    train_dataloader = DataLoader(train_dataset, batch_size=params["batch_size"], shuffle=True, pin_memory=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=params["batch_size"], num_workers=4, shuffle=True, pin_memory=True)
     validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
-    loss = losses.JaccardLoss()
-    metrics = [IoU()]
-    trainer = TrainEpoch(model, loss, metrics, optimizer, args.device, verbose=True)
-    validator = ValidEpoch(model, loss, metrics, device=args.device, verbose=True)
-    
-    valid_logs = {}
-    for epoch in range(args.max_epoch):
-        train_logs = trainer.run(train_dataloader)
-        valid_logs = validator.run(validation_dataloader)
-        valid_logs["default"] = valid_logs["iou_score"]
-        nni.report_intermediate_result(valid_logs)
-    nni.report_final_result(valid_logs)
+    num_class = NUM_CLASSES_DICT[args.dataset]
+    mode= "binary" if num_class==1 else "multiclass"
+    loss_func = CustomLoss(num_class)
+    device = torch.device(args.device)
+    for epoch in tqdm(range(args.max_epoch)):
+        train_logs = train(model, optimizer, loss_func, train_dataloader, mode, device)
+        validation_logs = validate(model, loss_func, validation_dataloader, mode, device)
+        validation_logs["default"] = validation_logs["iou_score"]
+        nni.report_intermediate_result(validation_logs)
+    nni.report_final_result(validation_logs)
     
 
 if __name__ == "__main__":
@@ -55,7 +40,8 @@ if __name__ == "__main__":
     # default params, otw updated by nni for trial
     params = {
         "batch_size": 4,
-        "lr": 3e-4
+        "lr": 3e-4,
+        "optimizer_name":"adamw",
     }
     optimized_params = nni.get_next_parameter()
     params.update(optimized_params)

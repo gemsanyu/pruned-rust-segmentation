@@ -9,10 +9,10 @@ class CustomLoss(base.Loss):
     def __init__(self, num_class=1, **kwargs) -> None:
         super().__init__(**kwargs)
         mode="binary" if num_class==1 else "multiclass"
-        # if num_class>1:
-        self.loss_funcs = [losses.TverskyLoss(mode), losses.DiceLoss(mode)]
-        # else:
-            # self.loss_funcs = [losses.DiceLoss(mode), losses.JaccardLoss(mode)]
+        if num_class>1:
+            self.loss_funcs = [losses.TverskyLoss(mode), losses.DiceLoss(mode)]
+        else:
+            self.loss_funcs = [losses.DiceLoss(mode), losses.JaccardLoss(mode)]
         self._name = "".join([str(loss_func)+" + " for loss_func in self.loss_funcs])
         
     def forward(self, y_pr, y_gt):

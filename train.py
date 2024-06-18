@@ -47,7 +47,7 @@ def train(model,
         y = y.long()
         optimizer.zero_grad()
         prediction = model.forward(x)
-        num_class = prediction.shape[1]
+        num_class = 1 if mode=="binary" else prediction.shape[1]
         loss = loss_func(prediction, y)
         loss.backward()
         optimizer.step()
@@ -101,7 +101,7 @@ def validate(model,
         y = y.to(device)
         y = y.long()
         prediction = model.forward(x)
-        num_class = prediction.shape[1]
+        num_class = 1 if mode=="binary" else prediction.shape[1]
         loss = loss_func(prediction, y)
         losses += [loss.cpu().item()]
         pred_ = torch.argmax(prediction.detach(), dim=1, keepdim=True).detach().cpu()

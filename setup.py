@@ -8,6 +8,7 @@ from segmentation_models_pytorch.base import SegmentationModel
 from torch.utils.tensorboard import SummaryWriter
 import torch
 from torch.optim import Optimizer
+from torch import optim
 
 ARCH_CLASS_DICT = {
     "fpn":smp.FPN,
@@ -19,6 +20,12 @@ ARCH_CLASS_DICT = {
     "pan":smp.PAN,
     "deeplabv3":smp.DeepLabV3,
     "deeplabv3+":smp.DeepLabV3Plus}
+
+OPTIM_CLASS_DICT = {
+    "adamw": optim.AdamW,
+    "sgd":optim.SGD,
+    "rmsprop":optim.RMSprop, 
+}
 
 NUM_CLASSES_DICT = {
     "NEA": 3,
@@ -47,6 +54,11 @@ def setup_model(args)->SegmentationModel:
         activation="sigmoid"
     )
     return model
+
+def setup_optimizer(model:torch.nn.Module, optimizer_name, lr):
+    OptimClass = OPTIM_CLASS_DICT[optimizer_name]
+    optimizer = OptimClass(model.parameters(), lr=lr)
+    return optimizer
 
 def setup(args, load_best:bool=False)->Tuple[SegmentationModel, Optimizer, SummaryWriter, pathlib.Path, int]:
     model = setup_model(args)
