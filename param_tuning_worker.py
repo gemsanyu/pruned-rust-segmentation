@@ -26,6 +26,7 @@ def run(args, params):
     mode= "binary" if num_class==1 else "multiclass"
     loss_func = CustomLoss(num_class)
     for epoch in tqdm(range(args.max_epoch)):
+        print("HELLO")
         train_logs = train(model, optimizer, loss_func, train_dataloader, mode, device)
         validation_logs = validate(model, loss_func, validation_dataloader, mode, device)
         validation_logs["default"] = validation_logs["iou_score"]
