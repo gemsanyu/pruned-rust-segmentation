@@ -20,7 +20,7 @@ def run(args, params):
     model = model.to(device)
     optimizer = setup_optimizer(model, params["optimizer_name"], params["lr"])
     train_dataset, validation_dataset = prepare_train_and_validation_datasets(args)
-    train_dataloader = DataLoader(train_dataset, batch_size=params["batch_size"], num_workers=0, shuffle=True, pin_memory=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=params["batch_size"], num_workers=4, shuffle=True, pin_memory=True)
     validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
     num_class = NUM_CLASSES_DICT[args.dataset]
     mode= "binary" if num_class==1 else "multiclass"
