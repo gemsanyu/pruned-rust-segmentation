@@ -24,7 +24,7 @@ def start_param_tuning(args):
     search_space = {
         "lr": {"_type": "loguniform", "_value":[1e-5, 0.1]},
         "batch_size": {"_type":"choice", "_value":[2,4,8]},
-        "optimizer_name": {"_type":"choice", "_value":["adamw","sgd","rmsprop"]}
+        "optimizer_name": {"_type":"choice", "_value":["sgd","rmsprop"]}
     }
     experiment.config.search_space = search_space
     experiment.run(8009)

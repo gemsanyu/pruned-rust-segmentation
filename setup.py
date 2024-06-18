@@ -63,7 +63,7 @@ def setup_optimizer(model:torch.nn.Module, optimizer_name, lr):
 def setup(args, load_best:bool=False)->Tuple[SegmentationModel, Optimizer, SummaryWriter, pathlib.Path, int]:
     model = setup_model(args)
     model = model.to(torch.device(args.device))
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
+    optimizer = setup_optimizer(model, "rmsprop", args.lr)
     tb_writer = prepare_tb_writer(args)
     
     checkpoint_root = "checkpoints"
