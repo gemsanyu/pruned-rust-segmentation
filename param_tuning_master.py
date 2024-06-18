@@ -16,8 +16,12 @@ def start_param_tuning(args):
     trial_code_dir = pathlib.Path(".")/"trial_results"/args.title
     trial_code_dir.mkdir(parents=True, exist_ok=True)
     experiment.config.trial_code_directory = trial_code_dir.absolute()
-    experiment.config.tuner.name = 'SMAC'
-    experiment.config.tuner.class_args['optimize_mode'] = 'maximize'
+    experiment.config.tuner.name = 'Evolution'
+    # experiment.config.tuner.class_args['optimize_mode'] = 'maximize'
+    experiment.config.tuner.class_args = {
+        'optimize_mode': 'maximize',
+        'population_size': 100
+    }
     experiment.config.max_trial_number = 100
     experiment.config.trial_concurrency = 2
     search_space = {
