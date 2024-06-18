@@ -10,7 +10,7 @@ class CustomLoss(base.Loss):
         super().__init__(**kwargs)
         mode="binary" if num_class==1 else "multiclass"
         # if num_class>1:
-        self.loss_funcs = [losses.SoftBCEWithLogitsLoss() ]
+        self.loss_funcs = [losses.TverskyLoss(mode), losses.DiceLoss(mode)]
         # else:
             # self.loss_funcs = [losses.DiceLoss(mode), losses.JaccardLoss(mode)]
         self._name = "".join([str(loss_func)+" + " for loss_func in self.loss_funcs])
@@ -19,6 +19,6 @@ class CustomLoss(base.Loss):
         loss = 0
         y_gt = y_gt.long()
         for loss_func in self.loss_funcs:
-            loss += loss_func.forward(y_pr, y_gt)
+            loss += loss_func.forward(y_pr, y_gt)/len(self.loss_funcs)
         return loss
     
