@@ -16,14 +16,15 @@ from tqdm import tqdm
 
 def run(args, params):
     model = setup_model(args)
+    device = torch.device(args.device)
+    model = model.to(device)
     optimizer = setup_optimizer(model, params["optimizer_name"], params["lr"])
     train_dataset, validation_dataset = prepare_train_and_validation_datasets(args)
-    train_dataloader = DataLoader(train_dataset, batch_size=params["batch_size"], num_workers=4, shuffle=True, pin_memory=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=params["batch_size"], num_workers=0, shuffle=True, pin_memory=True)
     validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
     num_class = NUM_CLASSES_DICT[args.dataset]
     mode= "binary" if num_class==1 else "multiclass"
     loss_func = CustomLoss(num_class)
-    device = torch.device(args.device)
     for epoch in tqdm(range(args.max_epoch)):
         train_logs = train(model, optimizer, loss_func, train_dataloader, mode, device)
         validation_logs = validate(model, loss_func, validation_dataloader, mode, device)
