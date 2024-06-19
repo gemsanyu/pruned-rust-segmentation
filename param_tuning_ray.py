@@ -84,7 +84,7 @@ if __name__ == "__main__":
                                  metric=metric,
                                  mode="max",
                                  max_t=args.max_epoch)
-    search_algo = TuneBOHB(space=params, max_concurrent=max_concurrent, metric=metric, mode="max")
+    search_alg = TuneBOHB(space=params, max_concurrent=max_concurrent, metric=metric, mode="max")
     # scheduler = ASHAScheduler(time_attr="training_iteration",
     #                         metric=metric,
     #                         mode="max",
@@ -97,6 +97,7 @@ if __name__ == "__main__":
         ),
         tune_config=tune.TuneConfig(
             scheduler=scheduler,
+            search_alg=search_alg,
             num_samples=100,
             max_concurrent_trials=max_concurrent,
         ),
