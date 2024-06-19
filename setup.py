@@ -22,18 +22,14 @@ ARCH_CLASS_DICT = {
     "deeplabv3+":smp.DeepLabV3Plus}
 
 OPTIM_CLASS_DICT = {
-    "adamw": optim.AdamW,
     "sgd":optim.SGD,
     "rmsprop":optim.RMSprop, 
 }
 
 NUM_CLASSES_DICT = {
     "NEA": 3,
-    "CIS": 1,
     "CCSC": 4,
 }
-
-
 
 def prepare_tb_writer(args)->SummaryWriter:
     summary_root = "runs"
@@ -55,9 +51,9 @@ def setup_model(args)->SegmentationModel:
     )
     return model
 
-def setup_optimizer(model:torch.nn.Module, optimizer_name, lr):
+def setup_optimizer(model:torch.nn.Module, optimizer_name, lr, momentum)->Optimizer:
     OptimClass = OPTIM_CLASS_DICT[optimizer_name]
-    optimizer = OptimClass(model.parameters(), lr=lr)
+    optimizer = OptimClass(model.parameters(), lr=lr, momentum=momentum)
     return optimizer
 
 def setup(args, load_best:bool=False)->Tuple[SegmentationModel, Optimizer, SummaryWriter, pathlib.Path, int]:
