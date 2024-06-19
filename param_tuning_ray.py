@@ -78,7 +78,7 @@ if __name__ == "__main__":
         "momentum":tune.choice([0, 0.5, 0.99]),
         "optimizer_name":tune.choice(["sgd","rmsprop"]),
     }
-    metric="validation_iou_score"
+    metric="iou_score"
     max_concurrent = 3
     scheduler = HyperBandForBOHB(time_attr="training_iteration",
                                  metric=metric,

@@ -38,6 +38,14 @@ def prepare_args():
                         type=float,
                         default=1e-4,
                         help="training learning rate")
+    parser.add_argument('--momentum',
+                        type=float,
+                        default=0.5,
+                        help="optimizer's momentum")
+    parser.add_argument('--optimizer-name',
+                        type=str,
+                        default="rmsprop",
+                        help="optimizer's momentum")
     
     # Pretrained Encoder
     parser.add_argument('--encoder',

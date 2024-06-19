@@ -65,9 +65,9 @@ def train(model,
         progress_bar.set_description(f"Training, loss={current_loss_mean}, iou_score={current_iou_mean}, f1_score={current_f1_mean}")
        
     logs = {
-        "training_loss": np.asanyarray(losses).mean(),
-        "training_iou_score": np.asanyarray(ious).mean(),
-        "training_f1_score": np.asanyarray(f1s).mean()
+        "loss": np.asanyarray(losses).mean(),
+        "iou_score": np.asanyarray(ious).mean(),
+        "f1_score": np.asanyarray(f1s).mean()
     }
     optimizer.zero_grad()
     return logs
@@ -118,9 +118,9 @@ def validate(model,
         progress_bar.set_description(f"Validation, loss={current_loss_mean}, iou_score={current_iou_mean}, f1_score={current_f1_mean}")
         
     logs = {
-        "validation_loss": np.asanyarray(losses).mean(),
-        "validation_iou_score": np.asanyarray(ious).mean(),
-        "validation_f1_score": np.asanyarray(f1s).mean()
+        "loss": np.asanyarray(losses).mean(),
+        "iou_score": np.asanyarray(ious).mean(),
+        "f1_score": np.asanyarray(f1s).mean()
     }
     return logs
 
