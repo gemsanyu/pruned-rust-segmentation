@@ -20,7 +20,8 @@ from filelock import FileLock
 from ray import train as train_ray
 from ray import tune
 from ray.train import Checkpoint
-from ray.tune.schedulers import ASHAScheduler
+from ray.tune.schedulers import HyperBandForBOHB
+from ray.tune.search.bohb import TuneBOHB
 from setup import NUM_CLASSES_DICT, setup_model, setup_optimizer
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
@@ -74,19 +75,25 @@ if __name__ == "__main__":
     params = {
         "batch_size": tune.choice([2, 4, 8]),
         "lr": tune.loguniform(1e-5, 1e-1),
-        "momentum":tune.loguniform(0.5, 0.99),
+        "momentum":tune.choice([0, 0.5, 0.99]),
         "optimizer_name":tune.choice(["sgd","rmsprop"]),
     }
     metric="validation_iou_score"
-    scheduler = ASHAScheduler(time_attr="training_iteration",
-                            metric=metric,
-                            mode="max",
-                            max_t=args.max_epoch)
-    max_concurrent = 6
+    max_concurrent = 3
+    scheduler = HyperBandForBOHB(time_attr="training_iteration",
+                                 metric=metric,
+                                 mode="max",
+                                 max_t=args.max_epoch)
+    search_algo = TuneBOHB(space=params, max_concurrent=max_concurrent, metric=metric, mode="max")
+    # scheduler = ASHAScheduler(time_attr="training_iteration",
+    #                         metric=metric,
+    #                         mode="max",
+    #                         max_t=args.max_epoch)
+    
     tuner = tune.Tuner(
         tune.with_resources(
             tune.with_parameters(run_func),
-            resources={"cpu": 2, "gpu": 0.15}
+            resources={"cpu": 2, "gpu": 0.3}
         ),
         tune_config=tune.TuneConfig(
             scheduler=scheduler,
