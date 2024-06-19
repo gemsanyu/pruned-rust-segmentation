@@ -33,7 +33,7 @@ def run(args, params):
     model = model.to(device)
     optimizer = setup_optimizer(model, params["optimizer_name"], params["lr"])
     train_dataset, validation_dataset = prepare_train_and_validation_datasets(args)
-    train_dataloader = DataLoader(train_dataset, batch_size=params["batch_size"], num_workers=4, shuffle=True, pin_memory=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=params["batch_size"], num_workers=2, shuffle=True, pin_memory=True)
     validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
     num_class = NUM_CLASSES_DICT[args.dataset]
     mode= "binary" if num_class==1 else "multiclass"
@@ -81,7 +81,7 @@ if __name__ == "__main__":
                                  mode="max",
                                  max_t=args.max_epoch)
     search_algo = TuneBOHB(metric=metric, mode="max")
-    max_concurrent = 1
+    max_concurrent = 6
     tuner = tune.Tuner(
         tune.with_resources(
             tune.with_parameters(train),
