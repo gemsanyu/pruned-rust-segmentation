@@ -19,9 +19,8 @@ from custom_loss import CustomLoss
 from filelock import FileLock
 from ray import train as train_ray
 from ray import tune
-from ray.tune.search.bohb import TuneBOHB
 from ray.train import Checkpoint
-from ray.tune.schedulers import HyperBandForBOHB
+from ray.tune.schedulers import ASHAScheduler
 from setup import NUM_CLASSES_DICT, setup_model, setup_optimizer
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
@@ -79,22 +78,20 @@ if __name__ == "__main__":
         "optimizer_name":tune.choice(["sgd","rmsprop"]),
     }
     metric="validation_iou_score"
-    scheduler = HyperBandForBOHB(time_attr="training_iteration",
-                                 metric=metric,
-                                 mode="max",
-                                 max_t=args.max_epoch)
-    search_algo = TuneBOHB(metric=metric, mode="max")
+    scheduler = ASHAScheduler(time_attr="training_iteration",
+                            metric=metric,
+                            mode="max",
+                            max_t=args.max_epoch)
     max_concurrent = 6
     tuner = tune.Tuner(
         tune.with_resources(
             tune.with_parameters(run_func),
-            resources={"cpu": 4, "gpu": 1}
+            resources={"cpu": 3, "gpu": 1}
         ),
         tune_config=tune.TuneConfig(
             scheduler=scheduler,
             num_samples=100,
             max_concurrent_trials=max_concurrent,
-            search_alg=search_algo
         ),
         param_space=params,
     )
