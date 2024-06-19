@@ -3,6 +3,7 @@ import random
 import tempfile
 from typing import Dict, Tuple
 from functools import partial
+import pathlib
 
 import numpy as np
 import torch
@@ -28,10 +29,12 @@ from train import prepare_train_and_validation_datasets, train, validate
 
 
 def run(args, params):
+    cwd = pathlib.Path(".").home()/"pruned-rust-segmentation"
+    os.chdir(cwd.absolute())
     model = setup_model(args)
     device = torch.device(args.device)
     model = model.to(device)
-    optimizer = setup_optimizer(model, params["optimizer_name"], params["lr"])
+    optimizer = setup_optimizer(model, params["optimizer_name"], params["lr"], params["momentum"])
     train_dataset, validation_dataset = prepare_train_and_validation_datasets(args)
     train_dataloader = DataLoader(train_dataset, batch_size=params["batch_size"], num_workers=2, shuffle=True, pin_memory=True)
     validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
@@ -67,7 +70,7 @@ if __name__ == "__main__":
     torch.random.manual_seed(args.seed)
     np.random.seed(args.seed)
     random.seed(args.seed)
-    run_func = partial(run, args=args)
+    run_func = partial(run, args)
     
     params = {
         "batch_size": tune.choice([2, 4, 8]),
@@ -84,7 +87,7 @@ if __name__ == "__main__":
     max_concurrent = 6
     tuner = tune.Tuner(
         tune.with_resources(
-            tune.with_parameters(train),
+            tune.with_parameters(run_func),
             resources={"cpu": 4, "gpu": 1}
         ),
         tune_config=tune.TuneConfig(
