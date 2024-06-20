@@ -30,6 +30,7 @@ def run(args, params):
         train_logs = train(model, optimizer, loss_func, train_dataloader, mode, device)
         validation_logs = validate(model, loss_func, validation_dataloader, mode, device)
         validation_logs["default"] = validation_logs["iou_score"]
+        print(validation_logs)
         nni.report_intermediate_result(validation_logs)
     nni.report_final_result(validation_logs)
     
