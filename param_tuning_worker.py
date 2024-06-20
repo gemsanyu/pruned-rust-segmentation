@@ -18,7 +18,7 @@ def run(args, params):
     model = setup_model(args)
     device = torch.device(args.device)
     model = model.to(device)
-    optimizer = setup_optimizer(model, params["optimizer_name"], params["lr"])
+    optimizer = setup_optimizer(model, params["optimizer_name"], params["lr"], params["momentum"])
     train_dataset, validation_dataset = prepare_train_and_validation_datasets(args)
     train_dataloader = DataLoader(train_dataset, batch_size=params["batch_size"], num_workers=1, shuffle=True, pin_memory=True)
     validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
