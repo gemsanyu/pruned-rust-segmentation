@@ -69,7 +69,7 @@ if __name__ == "__main__":
     params = {
         "batch_size": tune.choice([2, 4, 8]),
         "lr": tune.loguniform(1e-4, 1e-1),
-        "loss_combination": tune.choice(["focal_dice", "focal_tversky", "tversky"])
+        "loss_combination": tune.choice(["focal_dice", "focal_tversky", "tversky", "dice", "focal"])
     }
     metric="iou_score"
     max_concurrent = 5
