@@ -14,8 +14,8 @@ from custom_loss import CustomLoss
 from ray import train as train_ray
 from ray import tune
 from ray.train import Checkpoint
-from ray.tune.schedulers import ASHAScheduler
-from ray.tune.search.optuna import OptunaSearch
+from ray.tune.schedulers import HyperBandForBOHB
+from ray.tune.search.bohb import TuneBOHB
 from setup import NUM_CLASSES_DICT, setup_model, setup_optimizer
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -28,7 +28,7 @@ def run(args, params):
     model = setup_model(args)
     device = torch.device(args.device)
     model = model.to(device)
-    optimizer = setup_optimizer(model, params["optimizer_name"], params["lr"], params["momentum"])
+    optimizer = setup_optimizer(model, args.optimizer_name, params["lr"], args.momentum)
     train_dataset, validation_dataset = prepare_train_and_validation_datasets(args)
     train_dataloader = DataLoader(train_dataset, batch_size=params["batch_size"], num_workers=1, shuffle=True, pin_memory=True)
     validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
@@ -68,27 +68,24 @@ if __name__ == "__main__":
     
     params = {
         "batch_size": tune.choice([2, 4, 8]),
-        "lr": tune.uniform(1e-5, 1e-1),
-        "momentum":tune.choice([0, 0.5, 0.99]),
-        "optimizer_name":tune.choice(["sgd","rmsprop"]),
+        "lr": tune.loguniform(1e-4, 1e-1),
     }
     metric="iou_score"
     max_concurrent = 5
-    scheduler = ASHAScheduler(time_attr="training_iteration",
+    scheduler = HyperBandForBOHB(time_attr="training_iteration",
                                  metric=metric,
                                  mode="max",
-                                 max_t=args.max_epoch,
-                                 grace_period=10)
-    search_alg = OptunaSearch(metric=metric, mode="max")
+                                 max_t=args.max_epoch)
+    search_alg = TuneBOHB(metric=metric, mode="max")
     tuner = tune.Tuner(
         tune.with_resources(
             tune.with_parameters(run_func),
-            resources={"cpu": 2, "gpu": 0.3}
+            resources={"cpu": 2, "gpu": 0.15}
         ),
         tune_config=tune.TuneConfig(
             scheduler=scheduler,
             search_alg=search_alg,
-            num_samples=200,
+            num_samples=300,
             max_concurrent_trials=max_concurrent,
         ),
         param_space=params,

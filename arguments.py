@@ -44,7 +44,7 @@ def prepare_args():
                         help="optimizer's momentum")
     parser.add_argument('--optimizer-name',
                         type=str,
-                        default="rmsprop",
+                        default="sgd",
                         help="optimizer's momentum")
     
     # Pretrained Encoder
