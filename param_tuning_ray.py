@@ -7,23 +7,17 @@ import pathlib
 
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 import torch.utils
 import torch.utils.data
-import torchvision
-import torchvision.transforms as transforms
 from arguments import prepare_args
 from custom_loss import CustomLoss
-from filelock import FileLock
 from ray import train as train_ray
 from ray import tune
 from ray.train import Checkpoint
-from ray.tune.schedulers import HyperBandForBOHB
-from ray.tune.search.bohb import TuneBOHB
+from ray.tune.schedulers import ASHAScheduler
+from ray.tune.search.optuna import OptunaSearch
 from setup import NUM_CLASSES_DICT, setup_model, setup_optimizer
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 from train import prepare_train_and_validation_datasets, train, validate
 
@@ -74,22 +68,18 @@ if __name__ == "__main__":
     
     params = {
         "batch_size": tune.choice([2, 4, 8]),
-        "lr": tune.loguniform(1e-5, 1e-1),
+        "lr": tune.uniform(1e-5, 1e-1),
         "momentum":tune.choice([0, 0.5, 0.99]),
         "optimizer_name":tune.choice(["sgd","rmsprop"]),
     }
     metric="iou_score"
-    max_concurrent = 3
-    scheduler = HyperBandForBOHB(time_attr="training_iteration",
+    max_concurrent = 5
+    scheduler = ASHAScheduler(time_attr="training_iteration",
                                  metric=metric,
                                  mode="max",
-                                 max_t=args.max_epoch)
-    search_alg = TuneBOHB(space=params, max_concurrent=max_concurrent, metric=metric, mode="max")
-    # scheduler = ASHAScheduler(time_attr="training_iteration",
-    #                         metric=metric,
-    #                         mode="max",
-    #                         max_t=args.max_epoch)
-    
+                                 max_t=args.max_epoch,
+                                 grace_period=10)
+    search_alg = OptunaSearch(metric=metric, mode="max")
     tuner = tune.Tuner(
         tune.with_resources(
             tune.with_parameters(run_func),
@@ -98,7 +88,7 @@ if __name__ == "__main__":
         tune_config=tune.TuneConfig(
             scheduler=scheduler,
             search_alg=search_alg,
-            num_samples=100,
+            num_samples=200,
             max_concurrent_trials=max_concurrent,
         ),
         param_space=params,

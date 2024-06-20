@@ -43,7 +43,7 @@ if __name__ == "__main__":
     # default params, otw updated by nni for trial
     params = {
         "batch_size": 4,
-        "lr": 0.0000488,
+        "lr": 3e-4,
         "momentum":0.5,
         "optimizer_name":"sgd",
     }
