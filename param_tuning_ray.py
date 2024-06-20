@@ -34,7 +34,7 @@ def run(args, params):
     validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
     num_class = NUM_CLASSES_DICT[args.dataset]
     mode= "binary" if num_class==1 else "multiclass"
-    loss_func = CustomLoss(num_class)
+    loss_func = CustomLoss(num_class, loss_combination=params["loss_combination"])
     if train_ray.get_checkpoint():
         loaded_checkpoint = train_ray.get_checkpoint()
         with loaded_checkpoint.as_directory() as loaded_checkpoint_dir:
@@ -69,6 +69,7 @@ if __name__ == "__main__":
     params = {
         "batch_size": tune.choice([2, 4, 8]),
         "lr": tune.loguniform(1e-4, 1e-1),
+        "loss_combination": tune.choice(["focal_dice", "focal_tversky", "tversky"])
     }
     metric="iou_score"
     max_concurrent = 5
