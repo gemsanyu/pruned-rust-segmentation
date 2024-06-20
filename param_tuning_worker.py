@@ -15,6 +15,7 @@ from tqdm import tqdm
 
 
 def run(args, params):
+    print(params)
     model = setup_model(args)
     device = torch.device(args.device)
     model = model.to(device)
@@ -41,8 +42,8 @@ if __name__ == "__main__":
     # default params, otw updated by nni for trial
     params = {
         "batch_size": 4,
-        "lr": 3e-4,
-        "momentum":0,
+        "lr": 0.0000488,
+        "momentum":0.5,
         "optimizer_name":"sgd",
     }
     optimized_params = nni.get_next_parameter()
