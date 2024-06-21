@@ -131,9 +131,10 @@ def prepare_train_and_validation_datasets(args, num_images=None, n_splits=5)->Tu
     augmentation = get_training_augmentation()
     validation_augmentation = get_validation_augmentation()
     try:
-        validation_dataset = SegmentationDataset(name=args.dataset, mode="valid", augmentation=validation_augmentation, preprocessing=preprocessing)
+        validation_dataset = SegmentationDataset(name=args.dataset, mode="valid", preprocessing=preprocessing)
         train_dataset = SegmentationDataset(name=args.dataset, mode="train", num_images=num_images, augmentation=augmentation, preprocessing=preprocessing)
     except FileNotFoundError:
+        print("HALLO")
         full_train_dataset = SegmentationDataset(name=args.dataset, mode="train")
         kfold = KFold(n_splits=n_splits, shuffle=True)
         for fold, (train_ids, val_ids) in enumerate(kfold.split(full_train_dataset)):

@@ -62,7 +62,6 @@ def setup(args, load_best:bool=False)->Tuple[SegmentationModel, Optimizer, optim
     optimizer = setup_optimizer(model, args.optimizer_name, args.lr, args.momentum)
     lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.05, patience=5, threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08, verbose=True)
     tb_writer = prepare_tb_writer(args)
-    
     checkpoint_root = "checkpoints"
     checkpoint_dir = pathlib.Path("")/checkpoint_root/args.title
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
