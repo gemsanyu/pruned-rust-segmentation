@@ -22,7 +22,8 @@ def train(model,
           loss_func: Loss,
           dataloader: torch.utils.data.DataLoader,
           mode:str,
-          device):
+          device,
+          scheduler=None):
     """train the model and also validate for max_epoch epochs
 
     Args:
@@ -51,6 +52,8 @@ def train(model,
         loss = loss_func(prediction, y)
         loss.backward()
         optimizer.step()
+        if scheduler:
+            scheduler.step()
         losses += [loss.cpu().item()]
         pred_ = torch.argmax(prediction.detach(), dim=1, keepdim=True).detach().cpu()
         

@@ -31,10 +31,9 @@ def run(args):
     loss_func = CustomLoss(num_class, args.loss_combination)
     device = torch.device(args.device)
     for epoch in tqdm(range(last_epoch+1, args.max_epoch)):
-        train_logs = train(model, optimizer, loss_func, train_dataloader, mode, device)
+        train_logs = train(model, optimizer, loss_func, train_dataloader, mode, device, scheduler)
         validation_logs = validate(model, loss_func, validation_dataloader, mode, device)
-        scheduler.step(validation_logs["iou_score"])
-        train_logs["lr"] = scheduler._last_lr[0]
+        train_logs["lr"] = scheduler.get_last_lr()
         write_logs(train_logs, validation_logs, tb_writer, epoch)
         save(model, optimizer, validation_logs, checkpoint_dir, epoch)
     
