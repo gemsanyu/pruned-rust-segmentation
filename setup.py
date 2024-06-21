@@ -56,10 +56,11 @@ def setup_optimizer(model:torch.nn.Module, optimizer_name, lr, momentum)->Optimi
     optimizer = OptimClass(model.parameters(), lr=lr, momentum=momentum)
     return optimizer
 
-def setup(args, load_best:bool=False)->Tuple[SegmentationModel, Optimizer, SummaryWriter, pathlib.Path, int]:
+def setup(args, load_best:bool=False)->Tuple[SegmentationModel, Optimizer, optim.lr_scheduler.ReduceLROnPlateau, SummaryWriter, pathlib.Path, int]:
     model = setup_model(args)
     model = model.to(torch.device(args.device))
     optimizer = setup_optimizer(model, args.optimizer_name, args.lr, args.momentum)
+    lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.05, patience=5, threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08, verbose=True)
     tb_writer = prepare_tb_writer(args)
     
     checkpoint_root = "checkpoints"
@@ -77,7 +78,7 @@ def setup(args, load_best:bool=False)->Tuple[SegmentationModel, Optimizer, Summa
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         last_epoch = checkpoint["epoch"]
     
-    return model, optimizer, tb_writer, checkpoint_dir, last_epoch
+    return model, optimizer, lr_scheduler, tb_writer, checkpoint_dir, last_epoch
 
 
 def setup_pruning(args, load_best:bool=False)->Tuple[SegmentationModel, Optimizer, SummaryWriter, pathlib.Path, int]:
