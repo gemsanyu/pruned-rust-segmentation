@@ -46,6 +46,11 @@ def prepare_args():
                         type=str,
                         default="sgd",
                         help="optimizer's momentum")
+    parser.add_argument('--loss-combination',
+                        type=str,
+                        choices=["focal_dice", "focal_tversky", "tversky", "dice", "focal"],
+                        default="focal_dice",
+                        help="loss function")
     
     # Pretrained Encoder
     parser.add_argument('--encoder',

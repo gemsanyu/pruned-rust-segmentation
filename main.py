@@ -28,7 +28,7 @@ def run(args):
     train_dataset, validation_dataset = prepare_train_and_validation_datasets(args)
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=0, shuffle=True, pin_memory=True)
     validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
-    loss_func = CustomLoss(num_class)
+    loss_func = CustomLoss(num_class, args.loss_combination)
     device = torch.device(args.device)
     for epoch in tqdm(range(last_epoch+1, args.max_epoch)):
         train_logs = train(model, optimizer, loss_func, train_dataloader, mode, device)
