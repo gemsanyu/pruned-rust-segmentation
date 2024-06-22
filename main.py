@@ -33,7 +33,7 @@ def run(args):
     for epoch in tqdm(range(last_epoch+1, args.max_epoch)):
         train_logs = train(model, optimizer, loss_func, train_dataloader, mode, device, scheduler)
         validation_logs = validate(model, loss_func, validation_dataloader, mode, device)
-        train_logs["lr"] = scheduler.get_last_lr()
+        train_logs["lr"] = scheduler.get_last_lr()[0]
         write_logs(train_logs, validation_logs, tb_writer, epoch)
         save(model, optimizer, validation_logs, checkpoint_dir, epoch)
     
