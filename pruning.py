@@ -108,7 +108,7 @@ def run(args):
     training_steps = int(total_training_steps/total_times)
     # 80% initial -> scheduled pruning. 20% final fine-tuning
     config_list = auto_set_denpendency_group_ids(model, config_list, sample_input)
-    evaluator = nni.compression.TorchEvaluator(training, optimizer, training_step)
+    evaluator = nni.compression.TorchEvaluator(training, optimizer, training_step, scheduler)
     sub_pruner = TaylorPruner(model, config_list, evaluator, training_steps=training_steps)
     scheduled_pruner = AGPPruner(sub_pruner, interval_steps=training_steps, total_times=total_times)
     _, masks = scheduled_pruner.compress(max_steps=None, max_epochs=args.max_epoch)
