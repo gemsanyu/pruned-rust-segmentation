@@ -15,7 +15,6 @@ from nni.compression.speedup import ModelSpeedup
 from nni.compression.utils import auto_set_denpendency_group_ids
 from segmentation_models_pytorch.utils.train import TrainEpoch, ValidEpoch
 from setup import NUM_CLASSES_DICT, setup_pruning
-from simplify import simplify
 from torch.nn import Conv2d, Linear, Module
 from torch.utils.data import DataLoader
 from tqdm import tqdm
