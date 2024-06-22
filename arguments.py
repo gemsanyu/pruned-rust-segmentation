@@ -13,7 +13,7 @@ def prepare_args():
                         help="device: cuda or cpu")
     parser.add_argument('--title',
                         type=str,
-                        default="run-1",
+                        default="",
                         help="title to differentiate between experiments")
     parser.add_argument('--arch',
                         choices=["fpn","unet","unet++","manet","linknet","pspnet","pan","deeplabv3","deeplabv3+"],
