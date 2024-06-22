@@ -31,10 +31,13 @@ NUM_CLASSES_DICT = {
     "CCSC": 4,
 }
 
-def prepare_tb_writer(args)->SummaryWriter:
+def prepare_tb_writer(args, is_pruning=False)->SummaryWriter:
     summary_root = "runs"
     summary_dir = pathlib.Path(".")/summary_root
-    model_summary_dir = summary_dir/(args.title+str(args.sparsity))
+    if is_pruning:
+        model_summary_dir = summary_dir/(args.title+str(args.sparsity))
+    else:
+        model_summary_dir = summary_dir/args.title
     model_summary_dir.mkdir(parents=True, exist_ok=True)
     tb_writer = SummaryWriter(log_dir=model_summary_dir.absolute())
     return tb_writer
@@ -105,9 +108,5 @@ def setup_pruning(args, load_best:bool=False)->Tuple[SegmentationModel, Optimize
         model.load_state_dict(initial_checkpoint["model_state_dict"])
     optimizer = nni.trace(optim.SGD)(model.parameters(), lr=args.lr, momentum=args.momentum)
     lr_scheduler = nni.trace(optim.lr_scheduler.CyclicLR)(optimizer, 1e-4, 1e-1, mode="triangular2")
-    
-    
-    tb_writer = prepare_tb_writer(args)
-    
-    
+    tb_writer = prepare_tb_writer(args, is_pruning=True)
     return model, optimizer, lr_scheduler, tb_writer, checkpoint_dir, last_epoch

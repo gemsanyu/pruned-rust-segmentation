@@ -9,17 +9,18 @@ import torch
 import torch.utils
 import torch.utils.data
 from arguments import prepare_args
+from custom_loss import CustomLoss
 from nni.compression.pruning import AGPPruner, LinearPruner, TaylorPruner
 from nni.compression.speedup import ModelSpeedup
 from nni.compression.utils import auto_set_denpendency_group_ids
 from segmentation_models_pytorch.utils.train import TrainEpoch, ValidEpoch
-from setup import setup_pruning, NUM_CLASSES_DICT
+from setup import NUM_CLASSES_DICT, setup_pruning
 from simplify import simplify
 from torch.nn import Conv2d, Linear, Module
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 from train import prepare_train_and_validation_datasets, validate
 from utils import write_logs
-from custom_loss import CustomLoss
 
 
 def calculate_sparsity(model:Module, op_types_str):
@@ -81,7 +82,7 @@ def run(args):
         return loss
         
     def training(model, optimizer, training_step, lr_scheduler, max_steps, max_epochs):
-        for epoch in range(max_epochs):
+        for epoch in tqdm(range(max_epochs)):
             print(epoch)
             model.train()
             for batch in train_dataloader:
@@ -117,10 +118,8 @@ def run(args):
     model.eval()
     model = model.to(torch.device("cpu"))
     checkpoint_path = checkpoint_dir/(f"pruned_model-{str(args.sparsity)}.pth")
-    state_dict_path = checkpoint_dir/(f"pruned_model-{str(args.sparsity)}.pt")
     mask_path = checkpoint_dir/(f"pruned_mask-{str(args.sparsity)}.pth")
     torch.save(model, checkpoint_path.absolute())
-    torch.save(model.state_dict(), state_dict_path.absolute())
     torch.save(masks, mask_path.absolute())
     
     

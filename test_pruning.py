@@ -7,14 +7,12 @@ import pandas as pd
 import segmentation_models_pytorch as smp
 import torch
 from arguments import prepare_args
+from custom_loss import CustomLoss
 from segmentation_dataset import (SegmentationDataset, get_preprocessing,
                                   get_validation_augmentation)
-from segmentation_models_pytorch.utils import losses
-from segmentation_models_pytorch.utils.metrics import (Accuracy, Fscore, IoU,
-                                                       Precision, Recall)
-from segmentation_models_pytorch.utils.train import ValidEpoch
-from setup import setup
+from setup import NUM_CLASSES_DICT
 from torch.utils.data import DataLoader, Dataset
+from train import validate
 
 
 def get_test_dataset(args)->Dataset:
@@ -33,14 +31,15 @@ def test(args):
     checkpoint_root = "checkpoints"
     checkpoint_dir = pathlib.Path("")/checkpoint_root/args.title
     checkpoint_path = checkpoint_dir/(f"pruned_model-{str(args.sparsity)}.pth")
-    model = torch.load(checkpoint_path.absolute(), map_location=torch.device(args.device))
-    
+    device = torch.device(args.device)
+    model = torch.load(checkpoint_path.absolute(), map_location=device)
+    num_class = NUM_CLASSES_DICT[args.dataset]
+    mode = "binary" if num_class==1 else "multiclass"
+    loss_func = CustomLoss(num_class, args.loss_combination)
     test_dataset = get_test_dataset(args)
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, pin_memory=True)
-    loss = losses.JaccardLoss()
-    metrics = [IoU(), Accuracy(), Precision(), Recall(), Fscore()]
-    tester = ValidEpoch(model, loss, metrics, device=args.device, verbose=True)
-    test_log = tester.run(test_dataloader)
+    
+    test_log = validate(model, loss_func, test_dataloader, mode, device)
     test_log["arch"] = args.arch
     test_log["encoder"] = args.encoder
     test_log["title"] = args.title
