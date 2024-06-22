@@ -81,8 +81,6 @@ def setup(args, load_best:bool=False)->Tuple[SegmentationModel, Optimizer, optim
 
 
 def setup_pruning(args, load_best:bool=False)->Tuple[SegmentationModel, Optimizer, SummaryWriter, pathlib.Path, int]:
-    
-    
     checkpoint_root = "checkpoints"
     checkpoint_dir = pathlib.Path("")/checkpoint_root/args.title
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
@@ -91,7 +89,8 @@ def setup_pruning(args, load_best:bool=False)->Tuple[SegmentationModel, Optimize
         checkpoint_path = checkpoint_dir/"best_checkpoint_pruning.pt"
         
     model = setup_model(args)
-    optimizer = nni.trace(torch.optim.AdamW)(model.parameters(), lr=args.lr)
+    optimizer = setup_optimizer(model, args.optimizer_name, args.lr, args.momentum)
+    lr_scheduler = optim.lr_scheduler.CyclicLR(optimizer, 1e-4, 1e-1, mode="triangular2")
         
     checkpoint = None
     last_epoch = 0
@@ -99,7 +98,6 @@ def setup_pruning(args, load_best:bool=False)->Tuple[SegmentationModel, Optimize
         checkpoint = torch.load(checkpoint_path.absolute())
         Arch_Class = ARCH_CLASS_DICT[args.arch]
         model: Arch_Class = checkpoint["pruned_model"]
-        optimizer = nni.trace(torch.optim.AdamW)(model.parameters(), lr=args.lr)
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         last_epoch = checkpoint["epoch"]
     else:
@@ -109,4 +107,4 @@ def setup_pruning(args, load_best:bool=False)->Tuple[SegmentationModel, Optimize
     tb_writer = prepare_tb_writer(args)
     
     
-    return model, optimizer, tb_writer, checkpoint_dir, last_epoch
+    return model, optimizer, lr_scheduler, tb_writer, checkpoint_dir, last_epoch

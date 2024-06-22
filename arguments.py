@@ -34,6 +34,10 @@ def prepare_args():
                         type=int,
                         default=10,
                         help="trai maximum num of epoch")
+    parser.add_argument('--num-workers',
+                        type=int,
+                        default=0,
+                        help="num workers for dataloaders")
     parser.add_argument('--lr',
                         type=float,
                         default=1e-4,

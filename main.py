@@ -26,7 +26,7 @@ def run(args):
     num_class = NUM_CLASSES_DICT[args.dataset]
     mode = "binary" if num_class==1 else "multiclass"
     train_dataset, validation_dataset = prepare_train_and_validation_datasets(args)
-    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=4, shuffle=True, pin_memory=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.num_workers, shuffle=True, pin_memory=True)
     validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
     loss_func = CustomLoss(num_class, args.loss_combination)
     device = torch.device(args.device)

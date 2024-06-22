@@ -12,18 +12,14 @@ from arguments import prepare_args
 from nni.compression.pruning import AGPPruner, LinearPruner, TaylorPruner
 from nni.compression.speedup import ModelSpeedup
 from nni.compression.utils import auto_set_denpendency_group_ids
-from segmentation_models_pytorch.base.model import SegmentationModel
-from segmentation_models_pytorch.utils import losses
-from segmentation_models_pytorch.utils.meter import AverageValueMeter
-from segmentation_models_pytorch.utils.metrics import (Accuracy, Fscore, IoU,
-                                                       Precision, Recall)
 from segmentation_models_pytorch.utils.train import TrainEpoch, ValidEpoch
-from setup import setup_pruning
+from setup import setup_pruning, NUM_CLASSES_DICT
 from simplify import simplify
 from torch.nn import Conv2d, Linear, Module
 from torch.utils.data import DataLoader
-from train import prepare_train_and_validation_datasets
+from train import prepare_train_and_validation_datasets, validate
 from utils import write_logs
+from custom_loss import CustomLoss
 
 
 def calculate_sparsity(model:Module, op_types_str):
@@ -49,32 +45,32 @@ def calculate_sparsity(model:Module, op_types_str):
     sparsity /= module_count
     return sparsity 
 
-def run(args):
-    """main function to run the training, calling setup and preparing the train/validation epoch
-
-    Args:
-        args (_type_): _description_
-    """
-    model, optimizer, tb_writer, checkpoint_dir, last_epoch = setup_pruning(args)
-    train_dataset, validation_dataset = prepare_train_and_validation_datasets(args)
-    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True)
-    validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
-    
-    loss_func = losses.JaccardLoss()
-    metrics = [IoU(), Accuracy(), Precision(), Recall(), Fscore()]
-    
-    
-    
-    device = torch.device(args.device)
+def get_sample_input(validation_dataloader, device):
     sample_input = None
     for _, batch in enumerate(validation_dataloader):
         x,y = batch
         sample_input = x
         # sample_input = sample_input[None,:,:,:]
         break
-    
-    model = model.to(device)
     sample_input = sample_input.to(device)
+    return sample_input
+
+def run(args):
+    """main function to run the training, calling setup and preparing the train/validation epoch
+
+    Args:
+        args (_type_): _description_
+    """
+    model, optimizer, scheduler, tb_writer, checkpoint_dir, last_epoch = setup_pruning(args)
+    train_dataset, validation_dataset = prepare_train_and_validation_datasets(args)
+    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.num_workers, shuffle=True, pin_memory=True)
+    validation_dataloader = DataLoader(validation_dataset, batch_size=1, shuffle=False, pin_memory=True)
+    num_class = NUM_CLASSES_DICT[args.dataset]
+    mode = "binary" if num_class==1 else "multiclass"
+    loss_func = CustomLoss(num_class, args.loss_combination)
+    device = torch.device(args.device)
+    sample_input = get_sample_input(validation_dataloader, device)
+    model = model.to(device)
     pruned_op_types = ['Conv2d']
     
     def training_step(batch, model, *args, **kwargs):
@@ -93,21 +89,12 @@ def run(args):
                 loss = training_step(batch, model)
                 loss.backward()
                 optimizer.step()
-                
-
-            model.eval()
-            with torch.no_grad():
-                metrics_meters = {metric.__name__: AverageValueMeter() for metric in metrics}
-                for batch in validation_dataloader:
-                    x,y = batch
-                    x, y = x.to(device), y.to(device)
-                    prediction = model.forward(x)
-                    for metric_fn in metrics:
-                        metric_value = metric_fn(prediction, y).cpu().detach().numpy()
-                        metrics_meters[metric_fn.__name__].add(metric_value)
-                metrics_logs = {k: v.mean for k, v in metrics_meters.items()}
-                metrics_logs["sparsity"] = calculate_sparsity(model, pruned_op_types)
-                write_logs({}, metrics_logs, tb_writer, epoch)
+                if lr_scheduler:
+                    lr_scheduler.step()
+                    
+            validation_logs = validate(model, loss_func, validation_dataloader, mode, device)
+            validation_logs["sparsity"] = calculate_sparsity(model, pruned_op_types)
+            write_logs({}, validation_logs, tb_writer, epoch)
     
     
     
@@ -116,9 +103,9 @@ def run(args):
         'sparse_ratio': args.sparsity
     }]
     total_training_steps = len(train_dataloader)*args.max_epoch
-    total_times = 2
+    total_times = 10
+    total_times = int(total_times*0.8)
     training_steps = int(total_training_steps/total_times)
-    # total_times = int(total_times*0.8)
     # 80% initial -> scheduled pruning. 20% final fine-tuning
     config_list = auto_set_denpendency_group_ids(model, config_list, sample_input)
     evaluator = nni.compression.TorchEvaluator(training, optimizer, training_step)
@@ -126,20 +113,15 @@ def run(args):
     scheduled_pruner = AGPPruner(sub_pruner, interval_steps=training_steps, total_times=total_times)
     _, masks = scheduled_pruner.compress(max_steps=None, max_epochs=args.max_epoch)
     
-    # for key, mask in masks.items():
-    #     masks[key]["weight"].to(torch.device("cpu"))
-    # scheduled_pruner.unwrap_model()
-    scheduled_pruner.unwrap_model()
-    model = model.to(torch.device("cpu"))
     model.zero_grad()
-    sample_input = sample_input.to(torch.device("cpu"))
-    
-    ModelSpeedup(model, sample_input, masks, batch_size=1).speedup_model()
-    
-    # checkpoint_path = checkpoint_dir/(f"pruned_model-{str(args.sparsity)}.pth")
-    # mask_path = checkpoint_dir/(f"pruned_mask-{str(args.sparsity)}.pth")
-    # torch.save(model, checkpoint_path.absolute())
-    # torch.save(masks, mask_path.absolute())
+    model.eval()
+    model = model.to(torch.device("cpu"))
+    checkpoint_path = checkpoint_dir/(f"pruned_model-{str(args.sparsity)}.pth")
+    state_dict_path = checkpoint_dir/(f"pruned_model-{str(args.sparsity)}.pt")
+    mask_path = checkpoint_dir/(f"pruned_mask-{str(args.sparsity)}.pth")
+    torch.save(model, checkpoint_path.absolute())
+    torch.save(model.state_dict(), state_dict_path.absolute())
+    torch.save(masks, mask_path.absolute())
     
     
 if __name__ == "__main__":
