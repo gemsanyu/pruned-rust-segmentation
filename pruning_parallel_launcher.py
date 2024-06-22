@@ -34,7 +34,7 @@ def pruning_proc(arch, encoder, sparsity):
 
 
 if __name__ == "__main__":
-    sparsity_list = [0.2, 0.5, 0.8, 0.9]
+    sparsity_list = [0.2]
     arch_list = ["fpn", "manet", "deeplabv3", "unet", "linknet", "unet++"]
     encoder = "mobilenet_v2"
     args_list = [(arch, encoder, sparsity) for arch in arch_list for sparsity in sparsity_list]
