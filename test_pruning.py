@@ -44,6 +44,7 @@ def test(args):
     test_log["encoder"] = args.encoder
     test_log["title"] = args.title
     test_log["sparsity"] = args.sparsity
+    test_log["dataset"] = args.dataset
     result_dir = pathlib.Path(".")/"results"/args.title
     result_dir.mkdir(parents=True, exist_ok=True)
     result_file = result_dir/f"result_{str(args.sparsity)}.csv"
