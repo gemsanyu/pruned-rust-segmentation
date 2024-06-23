@@ -13,7 +13,7 @@ def pruning_proc(arch, encoder, sparsity):
                     "--sparsity",
                     str(sparsity),
                     "--dataset",
-                    "NEA",
+                    "CCSC",
                     "--batch-size",
                     "4",
                     "--lr",
@@ -25,7 +25,7 @@ def pruning_proc(arch, encoder, sparsity):
                     "--loss-combination",
                     "tversky",
                     "--num-workers",
-                    "4",
+                    "3",
                     "--device",
                     "cuda",
                     "--max-epoch",
@@ -34,9 +34,9 @@ def pruning_proc(arch, encoder, sparsity):
 
 
 if __name__ == "__main__":
-    sparsity_list = [0.2]
+    sparsity_list = [0.7]
     arch_list = ["fpn", "manet", "deeplabv3", "unet", "linknet", "unet++"]
     encoder = "mobilenet_v2"
     args_list = [(arch, encoder, sparsity) for arch in arch_list for sparsity in sparsity_list]
-    with mp.Pool(2) as pool:
+    with mp.Pool(4) as pool:
        pool.starmap(pruning_proc, args_list)
