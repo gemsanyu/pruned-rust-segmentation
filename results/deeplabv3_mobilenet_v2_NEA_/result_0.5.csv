@@ -1,0 +1,2 @@
+,loss,iou_score,f1_score,arch,encoder,title,sparsity,dataset
+0,0.6330286552166117,0.8224749215717974,0.9021945575187946,deeplabv3,mobilenet_v2,deeplabv3_mobilenet_v2_NEA_,0.5,NEA

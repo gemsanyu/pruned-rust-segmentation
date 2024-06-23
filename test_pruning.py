@@ -37,7 +37,7 @@ def test(args):
     mode = "binary" if num_class==1 else "multiclass"
     loss_func = CustomLoss(num_class, args.loss_combination)
     test_dataset = get_test_dataset(args)
-    test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, pin_memory=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False)
     
     test_log = validate(model, loss_func, test_dataloader, mode, device)
     test_log["arch"] = args.arch
