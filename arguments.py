@@ -71,6 +71,11 @@ def prepare_args():
                         type=float,
                         default=0.2,
                         help="sparsity target for pruning")
+    parser.add_argument('--pruner',
+                        type=str,
+                        choices=["agp","linear","movement"],
+                        default="agp",
+                        help="pruning algorithm")
     
     args = parser.parse_args(sys.argv[1:])
     args.title = args.arch+"_"+args.encoder+"_"+args.dataset+"_"+args.title
