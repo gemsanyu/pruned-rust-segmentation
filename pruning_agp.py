@@ -103,7 +103,7 @@ def run(args):
         'sparse_ratio': args.sparsity
     }]
     total_training_steps = len(train_dataloader)*args.max_epoch
-    total_times = 10
+    total_times = 5
     training_steps = int(total_training_steps/total_times)
     # 80% initial -> scheduled pruning. 20% final fine-tuning
     config_list = auto_set_denpendency_group_ids(model, config_list, sample_input)
