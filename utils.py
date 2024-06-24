@@ -49,8 +49,8 @@ def save(model:SegmentationModel,
         "epoch":epoch
     }
     result = valid_logs
-    torch.save(checkpoint, checkpoint_path.absolute())
-    torch.save(result, result_path.absolute())
+    # torch.save(checkpoint, checkpoint_path.absolute())
+    # torch.save(result, result_path.absolute())
     
     best_checkpoint_path = checkpoint_dir/"best_checkpoint.pt"
     best_result_path = checkpoint_dir/"best_result.pt"

@@ -1,2 +1,0 @@
-,loss,iou_score,f1_score,arch,encoder,title,sparsity,dataset
-0,0.4945635322866769,0.8973984430576193,0.9456301002666868,manet,mobilenet_v2,manet_mobilenet_v2_NEA_,0,NEA

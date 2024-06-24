@@ -119,6 +119,7 @@ def run(args):
         total_training_steps = len(train_dataloader)*pruning_epochs
         total_times = 5
         training_steps = int(total_training_steps/total_times)  
+        sub_pruner = TaylorPruner(model, config_list, evaluator, training_steps=training_steps)
         pruner = LinearPruner(sub_pruner, interval_steps=training_steps, total_times=total_times)
         _, masks = pruner.compress(max_steps=None, max_epochs=args.max_epoch)
     elif args.pruner == "movement":
@@ -126,7 +127,7 @@ def run(args):
         warmup_steps = len(train_dataloader)*warmup_epoch
         cooldown_begin_steps = pruning_epochs*len(train_dataloader)
         pruner = MovementPruner(model, config_list, evaluator, warmup_steps, cooldown_begin_steps, regular_scale=10)
-        pruner.compress(max_epochs=args.max_epoch)
+        pruner.compress(None, args.max_epoch)
         
     model.zero_grad()
     model.eval()

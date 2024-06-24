@@ -1,2 +1,0 @@
-,loss,iou_score,f1_score,arch,encoder,title,sparsity,dataset
-0,0.6358409215664041,0.8119833017217701,0.8955626508285259,fpn,mobilenet_v2,fpn_mobilenet_v2_NEA_,0.5,NEA

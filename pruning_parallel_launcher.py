@@ -1,7 +1,7 @@
 import multiprocessing as mp
 import subprocess
 
-def pruning_proc(arch, encoder, sparsity):
+def pruning_proc(arch, encoder, sparsity, dataset, pruner):
     # python pruning.py --arch fpn --dataset NEA --batch-size 4 --lr 3e-4 --max-epoch 100 --device cuda --encoder mobilenet_v2 --title exp_1 --sparsity 0.2
 
     process_args = ["python",
@@ -10,10 +10,12 @@ def pruning_proc(arch, encoder, sparsity):
                     arch,
                     "--encoder",
                     encoder,
+                    "--pruner",
+                    pruner,
                     "--sparsity",
                     str(sparsity),
                     "--dataset",
-                    "CCSC",
+                    dataset,
                     "--batch-size",
                     "4",
                     "--lr",
@@ -29,14 +31,18 @@ def pruning_proc(arch, encoder, sparsity):
                     "--device",
                     "cuda",
                     "--max-epoch",
-                    "100"]
+                    "150"]
     subprocess.run(process_args)
 
 
 if __name__ == "__main__":
-    sparsity_list = [0.7]
+    sparsity_list = [0.2, 0.5, 0.9]
     arch_list = ["fpn", "manet", "deeplabv3", "unet", "linknet", "unet++"]
     encoder = "mobilenet_v2"
-    args_list = [(arch, encoder, sparsity) for arch in arch_list for sparsity in sparsity_list]
-    with mp.Pool(4) as pool:
-       pool.starmap(pruning_proc, args_list)
+    dataset_list = ["CCSC", "NEA"]
+    pruner_list = ["agp","linear","movement"]
+    args_list = [(arch, encoder, sparsity, dataset, pruner) for dataset in dataset_list for pruner in pruner_list for arch in arch_list for sparsity in sparsity_list]
+    # with mp.Pool(1) as pool:
+    #    pool.starmap(pruning_proc, args_list)
+    for args in args_list:
+        pruning_proc(*args)
