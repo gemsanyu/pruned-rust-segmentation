@@ -57,7 +57,7 @@ def get_unique_colors(ref_mask_name:str, mask_dir: pathlib.Path):
 
 
 def run(mode, ref_mask_name):
-    dataset_dir = pathlib.Path("")/"CCSC_original"/mode
+    dataset_dir = pathlib.Path("")/"CCSC_512x512"/mode
     image_dir = dataset_dir/"images"
     image_filenames = os.listdir(image_dir.absolute())
     mask_dir = dataset_dir/"masks"
