@@ -115,12 +115,12 @@ def run(args):
     model.zero_grad()
     model.eval()
     model = model.to(torch.device("cpu"))
-    checkpoint_path = checkpoint_dir/(f"pruned_model-{str(args.sparsity)}.pth")
-    state_dict_path = checkpoint_dir/(f"pruned_model-{str(args.sparsity)}.pth")
-    mask_path = checkpoint_dir/(f"pruned_mask-{str(args.sparsity)}.pth")
+    checkpoint_path = checkpoint_dir/(f"pruned_model_agp-{str(args.sparsity)}.pth")
+    state_dict_path = checkpoint_dir/(f"pruned_model_agp-{str(args.sparsity)}.pth")
+    # mask_path = checkpoint_dir/(f"pruned_mask_agp-{str(args.sparsity)}.pth")
     torch.save(model, checkpoint_path.absolute())
     torch.save(model.state_dict(), state_dict_path.absolute())
-    torch.save(masks, mask_path.absolute())
+    # torch.save(masks, mask_path.absolute())
     
     
 if __name__ == "__main__":
