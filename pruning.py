@@ -104,7 +104,6 @@ def run(args):
     }]
     total_training_steps = len(train_dataloader)*args.max_epoch
     total_times = 10
-    total_times = int(total_times*0.8)
     training_steps = int(total_training_steps/total_times)
     # 80% initial -> scheduled pruning. 20% final fine-tuning
     config_list = auto_set_denpendency_group_ids(model, config_list, sample_input)
@@ -117,8 +116,10 @@ def run(args):
     model.eval()
     model = model.to(torch.device("cpu"))
     checkpoint_path = checkpoint_dir/(f"pruned_model-{str(args.sparsity)}.pth")
+    state_dict_path = checkpoint_dir/(f"pruned_model-{str(args.sparsity)}.pth")
     mask_path = checkpoint_dir/(f"pruned_mask-{str(args.sparsity)}.pth")
     torch.save(model, checkpoint_path.absolute())
+    torch.save(model.state_dict(), state_dict_path.absolute())
     torch.save(masks, mask_path.absolute())
     
     
