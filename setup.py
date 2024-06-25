@@ -35,7 +35,7 @@ def prepare_tb_writer(args, is_pruning=False)->SummaryWriter:
     summary_root = "runs"
     summary_dir = pathlib.Path(".")/summary_root
     if is_pruning:
-        model_summary_dir = summary_dir/(args.title+str(args.sparsity))
+        model_summary_dir = summary_dir/(args.title+"_"+args.pruner+"_"+str(args.sparsity))
     else:
         model_summary_dir = summary_dir/args.title
     model_summary_dir.mkdir(parents=True, exist_ok=True)
